@@ -442,6 +442,12 @@ MonoBehaviour:
     x: 51.503913
     y: -0.381147
   profile: walking
+  hoverHeight: 1
+  lineWidth: 1
+  startColor: {r: 1, g: 0.76496637, b: 0, a: 1}
+  endColor: {r: 1, g: 0.17319217, b: 0.015686274, a: 1}
+  lineMaterial: {fileID: 2100000, guid: d9091aa5a479dda4b90c1969fd197654, type: 2}
+  flowSpeed: 1
 --- !u!4 &2122511475
 Transform:
   m_ObjectHideFlags: 0
