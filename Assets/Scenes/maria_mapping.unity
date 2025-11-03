@@ -119,6 +119,17 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!114 &141649064 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114478715909612932, guid: e6b749c6d877f4c19a5a5c3c0783d53b, type: 3}
+  m_PrefabInstance: {fileID: 406073959}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd961b1c9541a4cee99686069ecce852, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &406073959
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -393,6 +404,59 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!1 &2122511473
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2122511475}
+  - component: {fileID: 2122511474}
+  m_Layer: 0
+  m_Name: DirectionsManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2122511474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2122511473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15de63d86236d7c42af18b6df2088a70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  map: {fileID: 141649064}
+  mapboxAccessToken: pk.eyJ1IjoibXRhbSIsImEiOiJjbWg5ZXU1cWcwZG13MmpyMWg2Z2NkYzg5In0.K5cI_clfU8HD-uh-r3lPpQ
+  startLocation:
+    x: 51.504497
+    y: -0.372668
+  endLocation:
+    x: 51.503913
+    y: -0.381147
+  profile: walking
+--- !u!4 &2122511475
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2122511473}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -81.29142, y: -263.86212, z: 174.08319}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -400,3 +464,4 @@ SceneRoots:
   - {fileID: 967284227}
   - {fileID: 1090942699}
   - {fileID: 406073959}
+  - {fileID: 2122511475}
