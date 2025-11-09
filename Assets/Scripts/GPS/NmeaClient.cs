@@ -10,6 +10,7 @@ namespace GPSBridgeHeadless
 {
     /// Receives NMEA sentences from the phone over UDP
     /// No UI; reads settings from GpsBridgeConfig.
+    /// This class handles networking only, GPS parsing is done by NmeaParser.
 
     public class NmeaClient : MonoBehaviour
     {
@@ -26,7 +27,7 @@ namespace GPSBridgeHeadless
 
         void Start()
         {
-            Debug.Log($"[GPS] Using IP {GpsBridgeConfig.PHONE_IP} : {GpsBridgeConfig.PORT}  " +
+            Debug.Log($"[GPS] Using IP {GpsBridgeConfig.DEVICE_IP} : {GpsBridgeConfig.PORT}  " +
                       $"UDP={GpsBridgeConfig.USE_UDP} Listen={GpsBridgeConfig.UDP_LISTEN_MODE}");
             if (autoConnectOnStart) _ = ConnectAsync();
         }
@@ -63,9 +64,9 @@ namespace GPSBridgeHeadless
             try
             {
                 // Force IPv4 explicitly (avoids odd IPv6 routing issues)
-                if (!IPAddress.TryParse(GpsBridgeConfig.PHONE_IP, out var ip))
+                if (!IPAddress.TryParse(GpsBridgeConfig.DEVICE_IP, out var ip))
                 {
-                    OnError?.Invoke($"Invalid IP '{GpsBridgeConfig.PHONE_IP}'");
+                    OnError?.Invoke($"Invalid IP '{GpsBridgeConfig.DEVICE_IP}'");
                     return;
                 }
                 var remoteEndPoint = new IPEndPoint(ip, GpsBridgeConfig.PORT);
@@ -159,9 +160,9 @@ namespace GPSBridgeHeadless
                 }
                 else
                 {
-                    if (!IPAddress.TryParse(GpsBridgeConfig.PHONE_IP, out var ip))
+                    if (!IPAddress.TryParse(GpsBridgeConfig.DEVICE_IP, out var ip))
                     {
-                        OnError?.Invoke($"Invalid IP '{GpsBridgeConfig.PHONE_IP}'");
+                        OnError?.Invoke($"Invalid IP '{GpsBridgeConfig.DEVICE_IP}'");
                         return;
                     }
                     _udpRemote = new IPEndPoint(ip, GpsBridgeConfig.PORT);
