@@ -489,7 +489,7 @@ MonoBehaviour:
   requestCooldown: 5
   visibleDistance: 5
   hoverHeight: 0.5
-  lineWidth: 0.1
+  lineWidth: 0.2
   startColor: {r: 1, g: 0.76496637, b: 0, a: 1}
   endColor: {r: 1, g: 0.17319217, b: 0.015686274, a: 1}
   lineMaterial: {fileID: 2100000, guid: d9091aa5a479dda4b90c1969fd197654, type: 2}

@@ -191,6 +191,10 @@ public class DirectionsRequest : MonoBehaviour
             return;
 
         Vector3 userPos = userCamera.position;
+        
+        // Vector from camera to route start
+        Vector3 toRouteStart = fullRouteWorldPositions[0] - userCamera.position;
+        
         float totalDistance = 0f;
         List<Vector3> visiblePoints = new List<Vector3>();
 
@@ -212,6 +216,15 @@ public class DirectionsRequest : MonoBehaviour
             }
         }
 
+        if (fullRouteWorldPositions.Count > 1)
+        {
+            Vector3 firstSegmentDir = (fullRouteWorldPositions[1] - fullRouteWorldPositions[0]).normalized;
+            float extendDistance = 2f; // meters behind start
+            Vector3 behindPoint = fullRouteWorldPositions[0] - firstSegmentDir * extendDistance;
+            visiblePoints.Insert(0, behindPoint);
+        }
+
+        
         // Apply only visible points to the line
         lineRenderer.positionCount = visiblePoints.Count;
         if (visiblePoints.Count > 0)
