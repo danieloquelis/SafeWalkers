@@ -6,6 +6,7 @@ using Mapbox.Unity.Map;               // Mapbox map classes
 using Mapbox.Unity.Utilities;         // Mapbox utility functions
 using Mapbox.Utils;                   // Vector2d for latitude/longitude
 using Newtonsoft.Json.Linq;           // For parsing JSON responses from Mapbox
+using TMPro; 
 
 public class DirectionsRequest : MonoBehaviour
 {
@@ -56,12 +57,18 @@ public class DirectionsRequest : MonoBehaviour
 
     [Tooltip("Speed of the line animation (optional)")]
     public float flowSpeed = 1f; // Line animation speed
+    
+    [Header("UI")]
+    [Tooltip("Text element to show distance & time")]
+    public TextMeshProUGUI routeInfoText;
 
     // ---------- Private Fields ----------
     private LineRenderer lineRenderer;    // Component to draw the route line
     private Vector2d lastUserGeoPos;      // Stores last known camera geo position
     private float lastRequestTime = 0f;   // <-- New: Tracks time of last API request (CHANGED)
     private List<Vector3> fullRouteWorldPositions = new List<Vector3>(); // Stores the *entire* route once downloaded
+    private float routeDistanceKm = 0f; // Total distance in km
+    private float routeDurationMin = 0f; // Total duration in minutes
     
     // ---------- Unity Start Method ----------
     void Start()
@@ -182,6 +189,25 @@ public class DirectionsRequest : MonoBehaviour
 
         // Immediately update visible section after route loads
         UpdateVisibleRoute();
+        
+        // Get distance and duration from the first route
+        var routeInfo = jsonObj["routes"]?[0];
+        if (routeInfo != null)
+        {
+            // Distance is in meters, convert to km
+            routeDistanceKm = ((float)routeInfo["distance"]) / 1000f;
+
+            // Duration is in seconds, convert to minutes
+            routeDurationMin = ((float)routeInfo["duration"]) / 60f;
+
+            Debug.Log($"Distance: {routeDistanceKm:F2} km, estimated time: {routeDurationMin:F1} min");
+        }
+        
+        // Update HUD
+        if (routeInfoText != null)
+        {
+            routeInfoText.text = $"Distance to safe place: {routeDistanceKm:F2} km\nTime to safe place: {routeDurationMin:F1} min";
+        }
     }
     
     // ---------- Show Only Nearby Section of the Route ----------
