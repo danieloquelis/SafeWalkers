@@ -30,9 +30,15 @@ public class DirectionsRequest : MonoBehaviour
     public Transform userCamera;         // Camera or user for dynamic start
 
     [Tooltip("Minimum movement (degrees) to request new route")]
-    public double moveThreshold = 0.00001; // ~1 meter
+    public double moveThreshold = 0.0001; // <-- Increased threshold to reduce API calls (~10 m) (CHANGED)
+
+    [Tooltip("Minimum time between route requests (seconds)")]
+    public float requestCooldown = 5f; // <-- New: Cooldown to avoid spamming API (CHANGED)
 
     [Header("Visual Settings")]
+    [Tooltip("How far ahead (in meters) to show the route")]
+    public float visibleDistance = 5f; // <-- Only show small portion ahead (CHANGED)
+    
     [Tooltip("Height above ground for the route line (meters)")]
     public float hoverHeight = 0.25f; // Hover height for MR passthrough
 
@@ -54,7 +60,9 @@ public class DirectionsRequest : MonoBehaviour
     // ---------- Private Fields ----------
     private LineRenderer lineRenderer;    // Component to draw the route line
     private Vector2d lastUserGeoPos;      // Stores last known camera geo position
-
+    private float lastRequestTime = 0f;   // <-- New: Tracks time of last API request (CHANGED)
+    private List<Vector3> fullRouteWorldPositions = new List<Vector3>(); // Stores the *entire* route once downloaded
+    
     // ---------- Unity Start Method ----------
     void Start()
     {
@@ -97,12 +105,13 @@ public class DirectionsRequest : MonoBehaviour
         Vector2d delta = currentGeoPos - lastUserGeoPos;
         double distance = Mathf.Sqrt((float)(delta.x * delta.x + delta.y * delta.y));
 
-        // Only request a new route if the camera moved beyond threshold
-        if (distance > moveThreshold)
+        // ---------- CHANGED: Only request a new route if moved beyond threshold AND cooldown elapsed ----------
+        if (distance > moveThreshold && Time.time - lastRequestTime > requestCooldown)
         {
             lastUserGeoPos = currentGeoPos;
             StopAllCoroutines();
             StartCoroutine(GetRoute());
+            lastRequestTime = Time.time; // Update last request time
         }
 
         // Animate line texture for flow effect
@@ -111,6 +120,9 @@ public class DirectionsRequest : MonoBehaviour
             float offset = Time.time * flowSpeed;
             lineMaterial.mainTextureOffset = new Vector2(-offset, 0);
         }
+        
+        // Update visible portion of route (only small section ahead)
+        UpdateVisibleRoute();
     }
 
     // ---------- Coroutine to Request Route from Mapbox ----------
@@ -148,8 +160,8 @@ public class DirectionsRequest : MonoBehaviour
             yield break;
         }
 
-        // Convert route coordinates to Unity world positions
-        List<Vector3> worldPositions = new List<Vector3>();
+        // Store full route, not just visible section
+        fullRouteWorldPositions.Clear();
         foreach (var coord in route)
         {
             double lon = (double)coord[0];
@@ -163,14 +175,47 @@ public class DirectionsRequest : MonoBehaviour
 
             worldPos.y = hoverHeight; // Apply hover for MR
 
-            worldPositions.Add(worldPos);
+            fullRouteWorldPositions.Add(worldPos);
         }
 
-        // Apply to LineRenderer
-        lineRenderer.positionCount = worldPositions.Count;
-        lineRenderer.SetPositions(worldPositions.ToArray());
+        Debug.Log($"Full route contains {fullRouteWorldPositions.Count} points.");
 
-        Debug.Log($"Route updated with {worldPositions.Count} points at hover height {hoverHeight}m.");
+        // Immediately update visible section after route loads
+        UpdateVisibleRoute();
+    }
+    
+    // ---------- Show Only Nearby Section of the Route ----------
+    private void UpdateVisibleRoute()
+    {
+        if (fullRouteWorldPositions.Count == 0 || userCamera == null)
+            return;
+
+        Vector3 userPos = userCamera.position;
+        float totalDistance = 0f;
+        List<Vector3> visiblePoints = new List<Vector3>();
+
+        // Iterate along the route until visibleDistance is exceeded
+        for (int i = 0; i < fullRouteWorldPositions.Count - 1; i++)
+        {
+            Vector3 current = fullRouteWorldPositions[i];
+            Vector3 next = fullRouteWorldPositions[i + 1];
+
+            float segmentDistance = Vector3.Distance(current, next);
+            totalDistance += segmentDistance;
+
+            visiblePoints.Add(current);
+
+            if (totalDistance >= visibleDistance)
+            {
+                visiblePoints.Add(next);
+                break;
+            }
+        }
+
+        // Apply only visible points to the line
+        lineRenderer.positionCount = visiblePoints.Count;
+        if (visiblePoints.Count > 0)
+            lineRenderer.SetPositions(visiblePoints.ToArray());
     }
 
     // ---------- Gradient Helper ----------
