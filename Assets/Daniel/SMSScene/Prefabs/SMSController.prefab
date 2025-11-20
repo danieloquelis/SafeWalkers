@@ -44,5 +44,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd0346516a3ad4249be3b2037cb61502, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  toNumber: +4915752918355
-  message: Test message
+  toNumber: 
+  message: 
