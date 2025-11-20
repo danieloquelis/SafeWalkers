@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SafeWalkers Live Video</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <meta
+      name="description"
+      content="SafeWalkers emergency live video session powered by Agora.io"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <h1>SafeWalkers Live</h1>
+        <p class="subtitle">Secure emergency video powered by Agora</p>
+      </header>
+
+      <main class="app-main">
+        <section class="session-info">
+          <div class="session-row">
+            <label for="sessionIdInput">Session ID</label>
+            <input id="sessionIdInput" type="text" readonly />
+          </div>
+          <p class="session-hint">
+            This session ID comes from your SafeWalkers headset. Keep this page
+            open during the call.
+          </p>
+        </section>
+
+        <section class="video-grid">
+          <div class="video-card">
+            <h2>You</h2>
+            <div id="local-player" class="video-player video-local">
+              <div class="video-placeholder">Your camera preview</div>
+            </div>
+          </div>
+
+          <div class="video-card">
+            <h2>SafeWalker</h2>
+            <div id="remote-player" class="video-player video-remote">
+              <div class="video-placeholder">Waiting for remote video…</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="controls">
+          <button id="joinBtn" class="btn primary">Join Call</button>
+          <button id="leaveBtn" class="btn secondary" disabled>Leave</button>
+        </section>
+
+        <section class="permissions-note">
+          <p>
+            When you tap <strong>Join Call</strong>, we will ask for access to
+            your camera and microphone so you can talk with the SafeWalkers
+            headset in real time.
+          </p>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <small
+          >&copy; <span id="year"></span> SafeWalkers &mdash; Video by
+          Agora.io</small
+        >
+      </footer>
+    </div>
+
+    <!-- Agora Web SDK (CDN) -->
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

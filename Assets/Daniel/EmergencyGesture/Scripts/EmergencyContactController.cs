@@ -111,13 +111,14 @@ public class EmergencyContactController : MonoBehaviour
 	/// Loads the active contact list from PlayerPrefs if available,
 	/// otherwise falls back to the serialized defaultEmergencyContacts.
 	/// </summary>
-	private void LoadContacts()
+	public void LoadContacts()
 	{
 		_activeContacts.Clear();
 
 		if (PlayerPrefs.HasKey(contactsPrefsKey))
 		{
 			string stored = PlayerPrefs.GetString(contactsPrefsKey);
+			Debug.Log($"[EmergencyContactController] Found PlayerPrefs key '{contactsPrefsKey}' with value: '{stored}'");
 			if (!string.IsNullOrEmpty(stored))
 			{
 				string[] split = stored.Split(';');
@@ -131,16 +132,23 @@ public class EmergencyContactController : MonoBehaviour
 				}
 			}
 		}
+		else
+		{
+			Debug.Log($"[EmergencyContactController] No PlayerPrefs key '{contactsPrefsKey}' found, using defaultEmergencyContacts.");
+		}
 
 		// Fallback to serialized defaults if nothing was loaded
 		if (_activeContacts.Count == 0 && defaultEmergencyContacts != null)
 		{
+			Debug.Log($"[EmergencyContactController] Loading {defaultEmergencyContacts.Count} contacts from defaultEmergencyContacts.");
 			_activeContacts.AddRange(defaultEmergencyContacts);
 		}
+		
+		Debug.Log($"[EmergencyContactController] Total active contacts after load: {_activeContacts.Count}");
 	}
 
 	/// <summary>
-	/// Composes the final message as a JSON payload that will be sent to each contact,
+	/// Composes the final message as a human-readable text that will be sent to each contact,
 	/// based on the base/override message and any optional contextual data.
 	/// </summary>
 	private string ComposeMessage(
@@ -153,15 +161,15 @@ public class EmergencyContactController : MonoBehaviour
 			? overrideMessage
 			: baseMessage;
 
-		var payload = new EmergencyMessagePayload
-		{
-			message = messageBody,
-			videoUrl = string.IsNullOrWhiteSpace(videoUrl) ? null : videoUrl,
-			imageBase64 = string.IsNullOrWhiteSpace(imageBase64) ? null : imageBase64,
-			position = position
-		};
+		// Build a simple human-readable message
+		string finalMessage = messageBody;
 
-		return JsonConvert.SerializeObject(payload);
+		if (!string.IsNullOrWhiteSpace(videoUrl))
+		{
+			finalMessage += $"\n\nJoin video call: {videoUrl}";
+		}
+
+		return finalMessage;
 	}
 
 	private class EmergencyMessagePayload
