@@ -89,3 +89,8 @@ crashlytics-build.properties
 *_BurstDebugInformation_DoNotShip/*
 *_BackUpThisFolder_ButDontShipItWithYourGame
 .DS_Store
+
+Assets/Resources/twilio_token.txt
+Assets/Resources/twilio_token.txt.meta
+Assets/Resources/twilio_sid.txt
+Assets/Resources/twilio_sid.txt.meta
