@@ -10,9 +10,20 @@ public class SMSController : MonoBehaviour
 	[TextArea(2, 4)]
 	public string message;
 
-	// Sends on Start if toNumber and message are provided (non-empty)
+	[Header("Behaviour")]
+	[Tooltip("If true, the SMS will be sent automatically on Start when toNumber and message are non-empty. " +
+	         "For production flows where other scripts call SendMessage() explicitly (e.g. EmergencyContactController), " +
+	         "this should be left false to avoid duplicate sends.")]
+	public bool sendOnStart = false;
+
+	// Optional auto-send for simple test scenes only.
 	void Start()
 	{
+		if (!sendOnStart)
+		{
+			return;
+		}
+
 		if (!string.IsNullOrWhiteSpace(toNumber) && !string.IsNullOrWhiteSpace(message))
 		{
 			SendMessage();

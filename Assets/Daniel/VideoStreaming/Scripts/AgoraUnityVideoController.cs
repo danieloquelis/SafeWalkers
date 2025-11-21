@@ -47,6 +47,9 @@ public class AgoraUnityVideoController : MonoBehaviour
 
     [Tooltip("Target FPS for pushing PCA frames into Agora.")]
     [SerializeField] private int passthroughTargetFps = 30;
+
+    [Tooltip("If true, rotate the PCA frames 180° to correct upside‑down orientation for remote clients.")]
+    [SerializeField] private bool rotatePcaFrames = true;
 #endif
 
     /// <summary>Current Agora channel name.</summary>
@@ -56,8 +59,10 @@ public class AgoraUnityVideoController : MonoBehaviour
 #if AGORA_RTC_SDK
     private RtcEngine _rtcEngine;
 
+    // Custom video track for PCA frames
+    private uint _customVideoTrackId;
+
     // PCA → Agora state
-    private bool _externalSourceConfigured;
     private float _pcaFrameInterval;
     private float _pcaTimeSinceLastPush;
     private byte[] _pcaBuffer;
@@ -129,8 +134,14 @@ public class AgoraUnityVideoController : MonoBehaviour
         _rtcEngine.EnableVideo();
         _rtcEngine.EnableAudio();
 
+        // Use a custom video track for PCA frames, not the default camera.
+        ChannelMediaOptions options = new ChannelMediaOptions();
+        options.publishCameraTrack.SetValue(false);
+        options.publishCustomVideoTrack.SetValue(true);
+        options.customVideoTrackId.SetValue(_customVideoTrackId);
+
         // Join without a token for testing (token can be added later).
-        int result = _rtcEngine.JoinChannel(token, channelName, "", 0);
+        int result = _rtcEngine.JoinChannel(token, channelName, 0, options);
         Debug.Log($"[AgoraUnityVideoController] JoinChannel result: {result}");
 #else
         Debug.LogWarning("[AgoraUnityVideoController] AGORA_RTC_SDK is not defined. Import the Agora Unity Video SDK and define AGORA_RTC_SDK in Player Settings > Scripting Define Symbols.");
@@ -186,25 +197,6 @@ public class AgoraUnityVideoController : MonoBehaviour
 
         if (!passthroughCameraAccess.IsUpdatedThisFrame)
             return;
-
-        // Configure external video source once.
-        if (!_externalSourceConfigured)
-        {
-            var senderOptions = new SenderOptions();
-            var rc = _rtcEngine.SetExternalVideoSource(
-                enabled: true,
-                useTexture: false,
-                sourceType: EXTERNAL_VIDEO_SOURCE_TYPE.VIDEO_FRAME,
-                encodedVideoOption: senderOptions);
-
-            Debug.Log($"[AgoraUnityVideoController] SetExternalVideoSource result: {rc}");
-            _externalSourceConfigured = rc == 0;
-            if (!_externalSourceConfigured)
-            {
-                Debug.LogError($"[AgoraUnityVideoController] Failed to configure external video source, result code: {rc}");
-                return;
-            }
-        }
 
         _pcaTimeSinceLastPush += Time.deltaTime;
         if (_pcaTimeSinceLastPush < _pcaFrameInterval)
@@ -263,11 +255,12 @@ public class AgoraUnityVideoController : MonoBehaviour
             cropTop = 0,
             cropRight = 0,
             cropBottom = 0,
-            rotation = 0,
+            // Rotate 180° to correct upside‑down PCA orientation for remote clients
+            rotation = rotatePcaFrames ? 180 : 0,
             timestamp = (long)(Time.realtimeSinceStartup * 1000)
         };
 
-        int pushResult = _rtcEngine.PushVideoFrame(frame);
+        int pushResult = _rtcEngine.PushVideoFrame(frame, _customVideoTrackId);
         if (pushResult != 0)
         {
             Debug.LogWarning($"[AgoraUnityVideoController] PushVideoFrame failed with code: {pushResult}");
@@ -284,6 +277,13 @@ public class AgoraUnityVideoController : MonoBehaviour
         if (_rtcEngine != null)
         {
             Debug.Log("[AgoraUnityVideoController] Leaving Agora channel and disposing engine.");
+
+            if (_customVideoTrackId != 0)
+            {
+                _rtcEngine.DestroyCustomVideoTrack(_customVideoTrackId);
+                _customVideoTrackId = 0;
+            }
+
             _rtcEngine.LeaveChannel();
             _rtcEngine.Dispose();
             _rtcEngine = null;
@@ -306,7 +306,7 @@ public class AgoraUnityVideoController : MonoBehaviour
 
         Debug.Log("[AgoraUnityVideoController] Initializing Agora engine.");
 
-        // Follow the pattern from Agora's own JoinChannelVideo example
+        // Follow the pattern from Agora's CustomCaptureVideo example
         _rtcEngine = Agora.Rtc.RtcEngine.CreateAgoraRtcEngine() as RtcEngine;
 
         var context = new RtcEngineContext();
@@ -323,6 +323,10 @@ public class AgoraUnityVideoController : MonoBehaviour
 
         var initResult = _rtcEngine.Initialize(context);
         Debug.Log($"[AgoraUnityVideoController] Initialize result: {initResult}");
+
+        // Create custom video track for PCA frames
+        _customVideoTrackId = _rtcEngine.CreateCustomVideoTrack();
+        Debug.Log($"[AgoraUnityVideoController] CreateCustomVideoTrack returns: {_customVideoTrackId}");
 
         // Attach our event handler so we can respond to remote user join/leave.
         _rtcEngine.InitEventHandler(new UnityAgoraEventHandler(this));
