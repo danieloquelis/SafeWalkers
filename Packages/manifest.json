@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "com.convai.openai": "https://github.com/danieloquelis/Unity-QuestConversationalAI.git?path=/com.convai.openai",
+    "com.endel.nativewebsocket": "https://github.com/endel/NativeWebSocket.git#upm",
     "com.meta.xr.mrutilitykit": "81.0.0",
     "com.meta.xr.sdk.core": "78.0.0",
     "com.meta.xr.sdk.interaction.ovr": "81.0.0",

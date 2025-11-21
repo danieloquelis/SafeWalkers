@@ -11,9 +11,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Daniel/EmergencyGesture/EmergencyGestureScene.unity
     guid: 406cd0910ace04eb086b7fab5904e926
-  - enabled: 1
+  - enabled: 0
     path: Assets/Daniel/VideoStreaming/VideoStreamingScene.unity
     guid: 106d25c3159cb4c998cd763760f21da7
+  - enabled: 1
+    path: Assets/Daniel/AIAgentScene/AIAgentScene.unity
+    guid: 7aeb1d946c9e94faf87db4fc3226c6d4
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: f17a5ecd4ec004698aadd0dd95f7b7fd, type: 2}
