@@ -119,6 +119,54 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &358364151
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 358364153}
+  - component: {fileID: 358364152}
+  m_Layer: 0
+  m_Name: OSM_MapManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &358364152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358364151}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9cea5e76395f0847a3494eb6e5e2bef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  routingScript: {fileID: 1571397851}
+  mapRenderer: {fileID: 562390004}
+  zoom: 18
+  tileSize: 256
+--- !u!4 &358364153
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358364151}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -50.83565, y: -47.205452, z: -276.72522}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &381783635
 GameObject:
   m_ObjectHideFlags: 0
@@ -256,54 +304,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!1 &547438922
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 547438924}
-  - component: {fileID: 547438923}
-  m_Layer: 0
-  m_Name: OSM_MapManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &547438923
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 547438922}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e9cea5e76395f0847a3494eb6e5e2bef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mapRenderer: {fileID: 562390004}
-  zoom: 17
-  startLat: 51.51165
-  startLon: -0.3768478
---- !u!4 &547438924
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 547438922}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -50.83565, y: -47.205452, z: -276.72522}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &562390002
 GameObject:
   m_ObjectHideFlags: 0
@@ -317,7 +317,7 @@ GameObject:
   - component: {fileID: 562390004}
   - component: {fileID: 562390003}
   m_Layer: 0
-  m_Name: OSM_Plane
+  m_Name: Map_Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -405,6 +405,55 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 562390002}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -50.83565, y: -47.205452, z: -276.72522}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &799369561
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 799369563}
+  - component: {fileID: 799369562}
+  m_Layer: 0
+  m_Name: ORS_MapManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &799369562
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 799369561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1017027efa4dd2498c7ed351eaeef9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  orsApiKey: eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQyMTE2MDgzYzM1NDQ1NWRiOTM0NTFhYmI2YTRhMzkxIiwiaCI6Im11cm11cjY0In0=
+  routingScript: {fileID: 1571397851}
+  mapRenderer: {fileID: 562390004}
+  width: 1024
+  height: 1024
+--- !u!4 &799369563
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 799369561}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -50.83565, y: -47.205452, z: -276.72522}
@@ -673,9 +722,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   orsApiKey: eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQyMTE2MDgzYzM1NDQ1NWRiOTM0NTFhYmI2YTRhMzkxIiwiaCI6Im11cm11cjY0In0=
   profile: foot-walking
-  simplifyRoute: 1
-  startLatLon: {x: 51.511654, y: -0.3768478}
-  endLatLon: {x: 51.506615, y: -0.3789855}
+  simplifyRoute: 0
+  startLatLon: {x: 51.5062, y: -0.3787154}
+  endLatLon: {x: 51.50455, y: -0.3759517}
   offRouteThreshold: 10
   requestCooldown: 1
   lineRenderer: {fileID: 1571397850}
@@ -702,5 +751,6 @@ SceneRoots:
   - {fileID: 381783638}
   - {fileID: 1078767239}
   - {fileID: 1571397852}
-  - {fileID: 547438924}
   - {fileID: 562390006}
+  - {fileID: 799369563}
+  - {fileID: 358364153}

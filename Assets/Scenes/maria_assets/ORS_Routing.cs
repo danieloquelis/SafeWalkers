@@ -15,7 +15,7 @@ public class ORS_Routing : MonoBehaviour
     public Vector2 startLatLon;    // lat, lon
     public Vector2 endLatLon;      // lat, lon
     public float offRouteThreshold = 2f; // meters
-    public float requestCooldown = 1f;  
+    public float requestCooldown = 1f;
 
     [Header("Visualization")]
     public LineRenderer lineRenderer;
@@ -29,7 +29,7 @@ public class ORS_Routing : MonoBehaviour
     private float lastRequestTime = 0f;
     private bool offRouteTriggered = false;
 
-    private const float EarthRadius = 6371000f; // meters
+    public const float EarthRadius = 6371000f; // meters
 
     void Start()
     {
@@ -159,7 +159,7 @@ public class ORS_Routing : MonoBehaviour
         return polyline;
     }
 
-    Vector3 LatLonToUnity(float lat, float lon)
+    public Vector3 LatLonToUnity(float lat, float lon)
     {
         float lat0 = startLatLon.x * Mathf.Deg2Rad;
         float lon0 = startLatLon.y * Mathf.Deg2Rad;
@@ -171,7 +171,7 @@ public class ORS_Routing : MonoBehaviour
         return new Vector3(x, 0.05f, z); // slightly above ground
     }
 
-    Vector2 UnityToLatLon(Vector3 pos)
+    public Vector2 UnityToLatLon(Vector3 pos)
     {
         float lat0 = startLatLon.x * Mathf.Deg2Rad;
         float lon0 = startLatLon.y * Mathf.Deg2Rad;
@@ -232,5 +232,29 @@ public class ORS_Routing : MonoBehaviour
         Vector3 ab = b - a;
         float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / ab.sqrMagnitude);
         return a + ab * t;
+    }
+
+    // ------------------------------
+    // PUBLIC GETTER FOR OTHER SCRIPTS
+    // ------------------------------
+    public List<Vector3> GetRoutePoints()
+    {
+        return cachedRoute;
+    }
+
+    // Added helpers requested by map script:
+    public bool RouteIsReady()
+    {
+        return routeReady;
+    }
+
+    public List<Vector2> GetRouteLatLonPoints()
+    {
+        List<Vector2> pts = new List<Vector2>();
+        foreach (var worldPoint in cachedRoute)
+        {
+            pts.Add(UnityToLatLon(worldPoint));
+        }
+        return pts;
     }
 }

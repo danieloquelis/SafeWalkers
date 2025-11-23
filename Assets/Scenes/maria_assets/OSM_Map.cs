@@ -1,90 +1,121 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
 public class OSM_Map : MonoBehaviour
 {
+    [Header("References")]
+    public ORS_Routing routingScript;  // Assign your ORS_Routing component
+    public Renderer mapRenderer;       // Assign the Plane's Renderer
+
     [Header("Map Settings")]
-    public Renderer mapRenderer;   // Assign a plane or quad in scene
-    public int zoom = 17;
+    public int zoom = 18;              // Zoom level
+    public int tileSize = 256;         // Tile size in pixels
 
-    [Header("Route Start")]
-    public float startLat = 51.51165f;
-    public float startLon = -0.3768478f;
-
-    // Earth radius in meters
-    private const float EarthRadius = 6378137f;
+    private const string tileUrlTemplate = "https://tile.openstreetmap.org/{0}/{1}/{2}.png";
 
     void Start()
     {
-        if (mapRenderer == null)
-        {
-            Debug.LogError("Map Renderer not assigned.");
-            return;
-        }
-
-        StartCoroutine(LoadTile(startLat, startLon, zoom));
+        StartCoroutine(WaitForRouteAndRenderMap());
     }
 
-    IEnumerator LoadTile(float lat, float lon, int zoom)
+    IEnumerator WaitForRouteAndRenderMap()
     {
-        Vector2 tile = LatLonToTile(lat, lon, zoom);
-        int tileX = Mathf.FloorToInt(tile.x);
-        int tileY = Mathf.FloorToInt(tile.y);
+        // Wait until route is ready
+        while (routingScript == null || routingScript.GetRoutePoints().Count == 0)
+            yield return null;
 
-        string url = $"https://tile.openstreetmap.org/{zoom}/{tileX}/{tileY}.png";
+        List<Vector3> routePoints = routingScript.GetRoutePoints();
+        List<Vector2> latLonPoints = new List<Vector2>();
+        foreach (var p in routePoints)
+            latLonPoints.Add(routingScript.UnityToLatLon(p));
 
-        UnityWebRequest req = UnityWebRequestTexture.GetTexture(url);
-        yield return req.SendWebRequest();
+        // Calculate route bounding box
+        float minLat = float.MaxValue, maxLat = float.MinValue;
+        float minLon = float.MaxValue, maxLon = float.MinValue;
 
-        if (req.result != UnityWebRequest.Result.Success)
+        foreach (var ll in latLonPoints)
         {
-            Debug.LogError("Failed to load map tile: " + req.error);
-            yield break;
+            if (ll.x < minLat) minLat = ll.x;
+            if (ll.x > maxLat) maxLat = ll.x;
+            if (ll.y < minLon) minLon = ll.y;
+            if (ll.y > maxLon) maxLon = ll.y;
         }
 
-        Texture2D tex = DownloadHandlerTexture.GetContent(req);
-        mapRenderer.material.mainTexture = tex;
+        // Convert bounding box to tile numbers
+        int xMinTile = LonToTileX(minLon, zoom);
+        int xMaxTile = LonToTileX(maxLon, zoom);
+        int yMinTile = LatToTileY(maxLat, zoom); // top
+        int yMaxTile = LatToTileY(minLat, zoom); // bottom
 
-        // Compute tile bounds in lat/lon using System.Math
-        double n = System.Math.Pow(2.0, zoom);
-        double lon_min = tileX / n * 360.0 - 180.0;
-        double lat_max = System.Math.Atan(System.Math.Sinh(System.Math.PI * (1 - 2 * tileY / n))) * Mathf.Rad2Deg;
-        double lat_min = System.Math.Atan(System.Math.Sinh(System.Math.PI * (1 - 2 * (tileY + 1) / n))) * Mathf.Rad2Deg;
-        double lon_max = (tileX + 1) / n * 360.0 - 180.0;
+        int widthTiles = xMaxTile - xMinTile + 1;
+        int heightTiles = yMaxTile - yMinTile + 1;
 
-        // Convert corners to Unity coordinates
-        Vector3 bottomLeft = LatLonToUnity((float)lat_min, (float)lon_min);
-        Vector3 topRight = LatLonToUnity((float)lat_max, (float)lon_max);
+        // Create map texture
+        Texture2D mapTexture = new Texture2D(widthTiles * tileSize, heightTiles * tileSize);
 
-        // Center and scale plane
-        mapRenderer.transform.position = (bottomLeft + topRight) / 2f;
-        mapRenderer.transform.localScale = new Vector3(
-            Mathf.Abs(topRight.x - bottomLeft.x),
-            1f,
-            Mathf.Abs(topRight.z - bottomLeft.z)
-        );
+        for (int x = 0; x < widthTiles; x++)
+        {
+            for (int y = 0; y < heightTiles; y++)
+            {
+                int tileX = xMinTile + x;
+                int tileY = yMinTile + y;
+                string url = string.Format(tileUrlTemplate, zoom, tileX, tileY);
+
+                UnityWebRequest req = UnityWebRequestTexture.GetTexture(url);
+                yield return req.SendWebRequest();
+
+                if (req.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogWarning("Failed to load tile: " + url);
+                    continue;
+                }
+
+                Texture2D tileTex = DownloadHandlerTexture.GetContent(req);
+                mapTexture.SetPixels(x * tileSize, (heightTiles - 1 - y) * tileSize, tileSize, tileSize, tileTex.GetPixels());
+            }
+        }
+
+        mapTexture.Apply();
+        mapRenderer.material.mainTexture = mapTexture;
+
+        // Scale plane to match tile bounding box in Unity units (meters)
+        float lat0 = routingScript.startLatLon.x * Mathf.Deg2Rad;
+
+        float mapWidthMeters = (TileXToLon(xMaxTile + 1, zoom) - TileXToLon(xMinTile, zoom)) * Mathf.Deg2Rad * ORS_Routing.EarthRadius * Mathf.Cos(lat0);
+        float mapHeightMeters = (TileYToLat(yMinTile, zoom) - TileYToLat(yMaxTile + 1, zoom)) * Mathf.Deg2Rad * ORS_Routing.EarthRadius;
+
+        mapRenderer.transform.localScale = new Vector3(mapWidthMeters / 10f, 1f, mapHeightMeters / 10f);
+
+        // Center plane on route
+        float centerLat = (minLat + maxLat) / 2f;
+        float centerLon = (minLon + maxLon) / 2f;
+
+        mapRenderer.transform.position = routingScript.LatLonToUnity(routingScript.startLatLon.x, routingScript.startLatLon.y);
+
+        Debug.Log("OSM map rendered and aligned with route.");
     }
 
-    // Convert lat/lon to Unity coordinates relative to start
-    Vector3 LatLonToUnity(float lat, float lon)
+    int LonToTileX(float lon, int z)
     {
-        float lat0 = startLat * Mathf.Deg2Rad;
-        float lon0 = startLon * Mathf.Deg2Rad;
+        return Mathf.FloorToInt((lon + 180f) / 360f * Mathf.Pow(2, z));
+    }
+
+    int LatToTileY(float lat, int z)
+    {
         float latRad = lat * Mathf.Deg2Rad;
-        float lonRad = lon * Mathf.Deg2Rad;
-
-        float x = (lonRad - lon0) * Mathf.Cos(lat0) * EarthRadius;
-        float z = (latRad - lat0) * EarthRadius;
-
-        return new Vector3(x, 0.05f, z); // slightly raised so route line is visible
+        return Mathf.FloorToInt((1f - Mathf.Log(Mathf.Tan(latRad) + 1f / Mathf.Cos(latRad)) / Mathf.PI) / 2f * Mathf.Pow(2, z));
     }
 
-    // OSM tile calculation
-    public static Vector2 LatLonToTile(float lat, float lon, int zoom)
+    float TileXToLon(int x, int z)
     {
-        double x = (lon + 180.0) / 360.0 * System.Math.Pow(2.0, zoom);
-        double y = (1.0 - System.Math.Log(System.Math.Tan(lat * Mathf.Deg2Rad) + 1.0 / System.Math.Cos(lat * Mathf.Deg2Rad)) / System.Math.PI) / 2.0 * System.Math.Pow(2.0, zoom);
-        return new Vector2((float)x, (float)y);
+        return x / Mathf.Pow(2, z) * 360f - 180f;
+    }
+
+    float TileYToLat(int y, int z)
+    {
+        float n = Mathf.PI - 2f * Mathf.PI * y / Mathf.Pow(2, z);
+        return Mathf.Rad2Deg * Mathf.Atan(0.5f * (Mathf.Exp(n) - Mathf.Exp(-n)));
     }
 }
