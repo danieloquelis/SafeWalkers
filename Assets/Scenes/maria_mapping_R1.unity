@@ -152,6 +152,7 @@ MonoBehaviour:
   mapRenderer: {fileID: 562390004}
   zoom: 18
   tileSize: 256
+  paddingDegrees: 0.0005
 --- !u!4 &358364153
 Transform:
   m_ObjectHideFlags: 0
@@ -723,8 +724,8 @@ MonoBehaviour:
   orsApiKey: eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQyMTE2MDgzYzM1NDQ1NWRiOTM0NTFhYmI2YTRhMzkxIiwiaCI6Im11cm11cjY0In0=
   profile: foot-walking
   simplifyRoute: 0
-  startLatLon: {x: 51.5062, y: -0.3787154}
-  endLatLon: {x: 51.50455, y: -0.3759517}
+  startLatLon: {x: 51.520042, y: -0.1376852}
+  endLatLon: {x: 51.515507, y: -0.1414115}
   offRouteThreshold: 10
   requestCooldown: 1
   lineRenderer: {fileID: 1571397850}

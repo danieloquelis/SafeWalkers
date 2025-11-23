@@ -28,7 +28,7 @@ public class OSM_Map : MonoBehaviour
         // Get route lat/lon points
         List<Vector2> latLonPoints = routingScript.GetRouteLatLonPoints();
 
-        // Compute bounding box
+        // Compute route bounding box
         float minLat = float.MaxValue, maxLat = float.MinValue;
         float minLon = float.MaxValue, maxLon = float.MinValue;
 
@@ -40,7 +40,7 @@ public class OSM_Map : MonoBehaviour
             if (ll.y > maxLon) maxLon = ll.y;
         }
 
-        // Add optional padding
+        // Add padding
         minLat -= paddingDegrees; maxLat += paddingDegrees;
         minLon -= paddingDegrees; maxLon += paddingDegrees;
 
@@ -78,6 +78,7 @@ public class OSM_Map : MonoBehaviour
                 }
 
                 Texture2D tileTex = DownloadHandlerTexture.GetContent(req);
+                // Flip Y so top of tiles is top of texture
                 mapTexture.SetPixels(
                     x * tileSize,
                     (heightTiles - 1 - y) * tileSize,
@@ -102,12 +103,45 @@ public class OSM_Map : MonoBehaviour
         // Rotate plane 180° so north points +Z
         mapRenderer.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
-        // Position plane so its center matches route center
-        Vector3 routeCenterWorld = routingScript.LatLonToUnity(centerLat, centerLon);
+        // Initial map position: route center
+        Vector3 mapCenterWorld = routingScript.LatLonToUnity(centerLat, centerLon);
+        mapRenderer.transform.position = mapCenterWorld;
 
-        mapRenderer.transform.position = routeCenterWorld;
+        // --- BEST-FIT OFFSET ---
+        Vector3 bestFitOffset = ComputeBestFitOffset(latLonPoints);
+        mapRenderer.transform.position += bestFitOffset;
 
-        Debug.Log($"OSM map rendered and centered on route. Plane position: {mapRenderer.transform.position}");
+        Debug.Log($"OSM map rendered, rotated, scaled, and offset. Plane position: {mapRenderer.transform.position}");
+    }
+
+    /// <summary>
+    /// Computes a small offset to align raster map roads with route points.
+    /// </summary>
+    Vector3 ComputeBestFitOffset(List<Vector2> latLonPoints)
+    {
+        // Compute route bounding box in Unity coordinates
+        float minX = float.MaxValue, maxX = float.MinValue;
+        float minZ = float.MaxValue, maxZ = float.MinValue;
+
+        foreach (var ll in latLonPoints)
+        {
+            Vector3 worldPos = routingScript.LatLonToUnity(ll.x, ll.y);
+            if (worldPos.x < minX) minX = worldPos.x;
+            if (worldPos.x > maxX) maxX = worldPos.x;
+            if (worldPos.z < minZ) minZ = worldPos.z;
+            if (worldPos.z > maxZ) maxZ = worldPos.z;
+        }
+
+        Vector3 routeCenter = new Vector3((minX + maxX) / 2f, 0f, (minZ + maxZ) / 2f);
+
+        // Current map center in Unity (geographic center of bounding box)
+        float centerLat = (latLonPoints[0].x + latLonPoints[latLonPoints.Count - 1].x) / 2f;
+        float centerLon = (latLonPoints[0].y + latLonPoints[latLonPoints.Count - 1].y) / 2f;
+        Vector3 mapCenterWorld = routingScript.LatLonToUnity(centerLat, centerLon);
+
+        // Offset to align route center to map center
+        Vector3 offset = routeCenter - mapCenterWorld;
+        return offset;
     }
 
     int LonToTileX(float lon, int z) => Mathf.FloorToInt((lon + 180f) / 360f * Mathf.Pow(2, z));
