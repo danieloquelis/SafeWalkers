@@ -12,24 +12,21 @@ public class ORS_Routing : MonoBehaviour
     public bool simplifyRoute = true;
 
     [Header("Routing Settings")]
-    public Vector2 startLatLon;    // lat, lon
-    public Vector2 endLatLon;      // lat, lon
+    public Vector2 startLatLon;
+    public Vector2 endLatLon;
     public float offRouteThreshold = 2f; // meters
-    public float requestCooldown = 1f;
 
     [Header("Visualization")]
     public LineRenderer lineRenderer;
 
     [Header("XR Rig")]
-    public Transform xrRig; // assign your XR Origin prefab here
+    public Transform xrRig;
 
     private List<Vector3> cachedRoute = new List<Vector3>();
     private bool routeReady = false;
     private bool routeRequestInProgress = false;
-    private float lastRequestTime = 0f;
-    private bool offRouteTriggered = false;
 
-    public const float EarthRadius = 6371000f; // meters
+    public const float EarthRadius = 6371000f;
 
     void Start()
     {
@@ -41,24 +38,15 @@ public class ORS_Routing : MonoBehaviour
 
     void Update()
     {
-        if (!routeReady || routeRequestInProgress || Time.time - lastRequestTime < requestCooldown)
-            return;
+        if (!routeReady || routeRequestInProgress) return;
         if (Camera.main == null) return;
 
         Vector3 playerPos = xrRig != null ? xrRig.position : Camera.main.transform.position;
         float dist = DistanceToRoute(playerPos, cachedRoute);
 
-        if (dist > offRouteThreshold && !offRouteTriggered)
+        if (dist > offRouteThreshold)
         {
-            offRouteTriggered = true;
-            Vector3 nearestPoint = FindNearestPointOnRoute(playerPos, cachedRoute);
-            Vector2 newStartLatLon = UnityToLatLon(nearestPoint);
-            lastRequestTime = Time.time;
-            StartCoroutine(RequestRoute(newStartLatLon, endLatLon));
-        }
-        else if (dist <= offRouteThreshold)
-        {
-            offRouteTriggered = false;
+            Debug.LogWarning("You are off the planned route!");
         }
     }
 
@@ -80,8 +68,6 @@ public class ORS_Routing : MonoBehaviour
         req.SetRequestHeader("Content-Type", "application/json");
         req.SetRequestHeader("Authorization", orsApiKey);
 
-        Debug.Log($"Requesting ORS route: start=[{start.x},{start.y}] end=[{end.x},{end.y}]");
-
         yield return req.SendWebRequest();
 
         if (req.result != UnityWebRequest.Result.Success)
@@ -91,19 +77,11 @@ public class ORS_Routing : MonoBehaviour
             yield break;
         }
 
-        if (req.responseCode == 429)
-        {
-            Debug.LogWarning("ORS limit reached: Too many requests.");
-            routeRequestInProgress = false;
-            yield break;
-        }
-
         ParseRoute(req.downloadHandler.text);
         DrawRoute();
         routeReady = true;
         routeRequestInProgress = false;
 
-        // Snap XR Rig or Main Camera to start of route
         if (snapPlayer && cachedRoute.Count > 0)
         {
             if (xrRig != null)
@@ -168,18 +146,7 @@ public class ORS_Routing : MonoBehaviour
 
         float x = (lonRad - lon0) * Mathf.Cos(lat0) * EarthRadius;
         float z = (latRad - lat0) * EarthRadius;
-        return new Vector3(x, 0.05f, z); // slightly above ground
-    }
-
-    public Vector2 UnityToLatLon(Vector3 pos)
-    {
-        float lat0 = startLatLon.x * Mathf.Deg2Rad;
-        float lon0 = startLatLon.y * Mathf.Deg2Rad;
-
-        float latRad = pos.z / EarthRadius + lat0;
-        float lonRad = pos.x / (EarthRadius * Mathf.Cos(lat0)) + lon0;
-
-        return new Vector2(latRad * Mathf.Rad2Deg, lonRad * Mathf.Rad2Deg);
+        return new Vector3(x, 0.05f, z);
     }
 
     void DrawRoute()
@@ -210,51 +177,30 @@ public class ORS_Routing : MonoBehaviour
         return Vector3.Distance(p, a + ab * t);
     }
 
-    Vector3 FindNearestPointOnRoute(Vector3 point, List<Vector3> route)
-    {
-        if (route.Count == 0) return point;
-
-        float minDist = float.MaxValue;
-        Vector3 nearest = route[0];
-
-        for (int i = 0; i < route.Count - 1; i++)
-        {
-            Vector3 closest = ClosestPointOnSegment(point, route[i], route[i + 1]);
-            float dist = Vector3.Distance(point, closest);
-            if (dist < minDist) { minDist = dist; nearest = closest; }
-        }
-        return nearest;
-    }
-
-    Vector3 ClosestPointOnSegment(Vector3 p, Vector3 a, Vector3 b)
-    {
-        Vector3 ap = p - a;
-        Vector3 ab = b - a;
-        float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / ab.sqrMagnitude);
-        return a + ab * t;
-    }
-
     // ------------------------------
-    // PUBLIC GETTER FOR OTHER SCRIPTS
+    // PUBLIC GETTERS
     // ------------------------------
-    public List<Vector3> GetRoutePoints()
-    {
-        return cachedRoute;
-    }
-
-    // Added helpers requested by map script:
-    public bool RouteIsReady()
-    {
-        return routeReady;
-    }
+    public List<Vector3> GetRoutePoints() => cachedRoute;
+    public bool RouteIsReady() => routeReady;
 
     public List<Vector2> GetRouteLatLonPoints()
     {
-        List<Vector2> pts = new List<Vector2>();
+        List<Vector2> latLonList = new List<Vector2>();
         foreach (var worldPoint in cachedRoute)
         {
-            pts.Add(UnityToLatLon(worldPoint));
+            latLonList.Add(UnityToLatLon(worldPoint));
         }
-        return pts;
+        return latLonList;
+    }
+
+    public Vector2 UnityToLatLon(Vector3 pos)
+    {
+        float lat0 = startLatLon.x * Mathf.Deg2Rad;
+        float lon0 = startLatLon.y * Mathf.Deg2Rad;
+
+        float latRad = pos.z / EarthRadius + lat0;
+        float lonRad = pos.x / (EarthRadius * Mathf.Cos(lat0)) + lon0;
+
+        return new Vector2(latRad * Mathf.Rad2Deg, lonRad * Mathf.Rad2Deg);
     }
 }
