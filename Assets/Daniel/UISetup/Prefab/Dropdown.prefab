@@ -111,7 +111,6 @@ GameObject:
   - component: {fileID: 2020655481576165182}
   - component: {fileID: 406830977289606125}
   - component: {fileID: 451420346118674784}
-  - component: {fileID: 1267575884667853801}
   m_Layer: 0
   m_Name: DropDownButton
   m_TagString: QDSUIToggleButton
@@ -221,21 +220,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1267575884667853801
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 386195675626229082}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90ffa2038e593490db95ec756137cd75, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  title: {fileID: 1421075315611805619}
-  subTitle: {fileID: 369270133453692845}
-  icon: {fileID: 6070023218280545878}
 --- !u!1 &412595779414456158
 GameObject:
   m_ObjectHideFlags: 0
