@@ -335,7 +335,8 @@ namespace LocalWake.Unity
             foreach (var r in _references)
             {
                 float dist = DtwDistance.DtwCosine(currEmbedding, r.Embedding);
-                if (dist < threshold)
+                // Note: I am inverting this but real one before is dist < threshold
+                if (dist >= threshold)
                 {
                     OnWakeWordDetected?.Invoke(r.Name, dist);
                     onWakeWordDetected?.Invoke(r.Name, dist);
