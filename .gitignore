@@ -96,3 +96,6 @@ Assets/Resources/twilio_sid.txt
 Assets/Resources/twilio_sid.txt.meta
 Assets/Resources/OpenAIConfig.asset
 Assets/Resources/OpenAIConfig.asset.meta
+
+# Local ONNX Runtime Android bundle (kept out of git; headers/libs are copied into SpeechEmbeddingPlugin/include and libs)
+/SpeechEmbeddingPlugin/ONNX_Runtime_Android_1.23.2/
