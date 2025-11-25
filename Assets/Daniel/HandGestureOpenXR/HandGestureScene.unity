@@ -427,12 +427,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 316515628}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 2111694444}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &316515630
 MonoBehaviour:
@@ -448,6 +448,84 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HandTrackingEvents: {fileID: 2111694443}
   m_HandShapeOrPose: {fileID: 11400000, guid: 64d99981cf37b4e14b053617c6c5064e, type: 2}
+  m_GesturePerformed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_GestureEnded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: No detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_MinimumHoldTime: 0.1
+  m_GestureDetectionInterval: 0.02
+--- !u!1 &332130744
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 332130745}
+  - component: {fileID: 332130746}
+  m_Layer: 0
+  m_Name: 'ThumbsDownGestureRight '
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &332130745
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 332130744}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1178049687}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &332130746
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 332130744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HandTrackingEvents: {fileID: 1178049686}
+  m_HandShapeOrPose: {fileID: 11400000, guid: 287c2cacac960472dbdb87415ff92626, type: 2}
   m_GesturePerformed:
     m_PersistentCalls:
       m_Calls:
@@ -911,6 +989,84 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1105824415}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &807349533
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 807349534}
+  - component: {fileID: 807349535}
+  m_Layer: 0
+  m_Name: Help2GestureLeft
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &807349534
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 807349533}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2111694444}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &807349535
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 807349533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HandTrackingEvents: {fileID: 2111694443}
+  m_HandShapeOrPose: {fileID: 11400000, guid: f3721eaa991474af0bcd704305ca65e6, type: 2}
+  m_GesturePerformed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_GestureEnded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: No detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_MinimumHoldTime: 0.1
+  m_GestureDetectionInterval: 0.02
 --- !u!1 &808955878
 GameObject:
   m_ObjectHideFlags: 0
@@ -1528,6 +1684,84 @@ Transform:
   - {fileID: 1006278277}
   m_Father: {fileID: 808955879}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1034903190
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1034903191}
+  - component: {fileID: 1034903192}
+  m_Layer: 0
+  m_Name: Help2GestureRight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1034903191
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1034903190}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1178049687}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1034903192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1034903190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HandTrackingEvents: {fileID: 1178049686}
+  m_HandShapeOrPose: {fileID: 11400000, guid: d4e75ee8b142f46d487727d097029eb5, type: 2}
+  m_GesturePerformed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_GestureEnded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: No detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_MinimumHoldTime: 0.1
+  m_GestureDetectionInterval: 0.02
 --- !u!1 &1105824414
 GameObject:
   m_ObjectHideFlags: 0
@@ -1560,6 +1794,71 @@ Transform:
   - {fileID: 718229940}
   m_Father: {fileID: 1486018198}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1178049685
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1178049687}
+  - component: {fileID: 1178049686}
+  m_Layer: 0
+  m_Name: RightHandEvents
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1178049686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178049685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5b9cf54c47f40ee9c3eb30ea8eb89b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Handedness: 2
+  m_UpdateType: 1
+  m_PoseUpdated:
+    m_PersistentCalls:
+      m_Calls: []
+  m_JointsUpdated:
+    m_PersistentCalls:
+      m_Calls: []
+  m_TrackingAcquired:
+    m_PersistentCalls:
+      m_Calls: []
+  m_TrackingLost:
+    m_PersistentCalls:
+      m_Calls: []
+  m_TrackingChanged:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!4 &1178049687
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178049685}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1241189081}
+  - {fileID: 1277653484}
+  - {fileID: 1034903191}
+  - {fileID: 332130745}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1204429347
 GameObject:
   m_ObjectHideFlags: 0
@@ -1591,6 +1890,162 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2056403960}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1241189080
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1241189081}
+  - component: {fileID: 1241189082}
+  m_Layer: 0
+  m_Name: PhoneGestureRight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1241189081
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241189080}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1178049687}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1241189082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1241189080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HandTrackingEvents: {fileID: 1178049686}
+  m_HandShapeOrPose: {fileID: 11400000, guid: 393545162c2554b36a26709d1be048df, type: 2}
+  m_GesturePerformed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_GestureEnded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: No detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_MinimumHoldTime: 0.1
+  m_GestureDetectionInterval: 0.02
+--- !u!1 &1277653483
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1277653484}
+  - component: {fileID: 1277653485}
+  m_Layer: 0
+  m_Name: Help1GestureRight
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1277653484
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1277653483}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1178049687}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1277653485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1277653483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HandTrackingEvents: {fileID: 1178049686}
+  m_HandShapeOrPose: {fileID: 11400000, guid: b9b172fee905747828322522505d82d9, type: 2}
+  m_GesturePerformed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_GestureEnded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: No detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_MinimumHoldTime: 0.1
+  m_GestureDetectionInterval: 0.02
 --- !u!1 &1328344804
 GameObject:
   m_ObjectHideFlags: 0
@@ -2263,6 +2718,84 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!1 &1996721766
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1996721767}
+  - component: {fileID: 1996721768}
+  m_Layer: 0
+  m_Name: Help1GestureLeft
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1996721767
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996721766}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2111694444}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1996721768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996721766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HandTrackingEvents: {fileID: 2111694443}
+  m_HandShapeOrPose: {fileID: 11400000, guid: a2f3d9509d9524a3f9857889ce53d039, type: 2}
+  m_GesturePerformed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_GestureEnded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: No detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_MinimumHoldTime: 0.1
+  m_GestureDetectionInterval: 0.02
 --- !u!1 &2056403959
 GameObject:
   m_ObjectHideFlags: 0
@@ -2295,6 +2828,84 @@ Transform:
   - {fileID: 1204429348}
   m_Father: {fileID: 1006806827}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2085981446
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2085981447}
+  - component: {fileID: 2085981448}
+  m_Layer: 0
+  m_Name: ThumbDownGestureLeft
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2085981447
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085981446}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2111694444}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2085981448
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085981446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HandTrackingEvents: {fileID: 2111694443}
+  m_HandShapeOrPose: {fileID: 11400000, guid: 3b00d791c844646379f9683d0b4cdb12, type: 2}
+  m_GesturePerformed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: Detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_GestureEnded:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1877193994}
+        m_TargetAssemblyTypeName: TMPro.TextMeshProUGUI, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: No detected
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_MinimumHoldTime: 0.1
+  m_GestureDetectionInterval: 0.02
 --- !u!1 &2111694442
 GameObject:
   m_ObjectHideFlags: 0
@@ -2353,7 +2964,11 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 316515629}
+  - {fileID: 1996721767}
+  - {fileID: 807349534}
+  - {fileID: 2085981447}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
@@ -2364,6 +2979,6 @@ SceneRoots:
   - {fileID: 604191966}
   - {fileID: 1002011907}
   - {fileID: 2111694444}
-  - {fileID: 316515629}
+  - {fileID: 1178049687}
   - {fileID: 1565447600}
   - {fileID: 1544465027}
