@@ -15,7 +15,7 @@ public enum GestureOption
 
 public class GestureDropDown : MonoBehaviour
 {
-    [Header("Meta Dropdown")]
+    [Header("Meta Dropdown")] 
     [Tooltip("Meta/Oculus DropDownGroup that owns the gesture toggles.")]
     [SerializeField] private DropDownGroup dropDownGroup;
 

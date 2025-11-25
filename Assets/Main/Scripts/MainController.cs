@@ -1,0 +1,158 @@
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.SceneManagement;
+
+public enum HandPose
+{
+    Phone = 0,
+    Help1 = 1,
+    Help2 = 2,
+    ThumbsDown = 3
+}
+
+public class MainController : MonoBehaviour
+{
+    [Header("Setup UI")]
+    [SerializeField] private RectTransform setupPanel;
+
+    [Header("Player Pref Keys")]
+    [SerializeField] private string mainEmergencyContactKey = "MainEmergencyContactNumber";
+    [SerializeField] private string emergencyGestureKey = "EmergencyGesture";
+
+    [Header("Gesture Detection")]
+    [Tooltip("PlayerPrefs key used by GestureDropDown to store the selected gesture index.")]
+    [SerializeField] private string gestureSelectionPrefsKey = "GestureDropDownSelection";
+    [Tooltip("Invoked when a detected hand pose matches the configured safe-mode gesture.")]
+    [SerializeField] private UnityEvent onSafeModeEnabled;
+
+    // Local cached state
+    private bool _hasMainContact;
+    private bool _hasEmergencyGesture;
+    private bool _hasGestureSelection;
+    private HandPose _savedHandPose;
+
+    private void Start()
+    {
+        OnRefresh();
+    }
+
+    /// <summary>
+    /// Public method to re-fetch all relevant data from PlayerPrefs and refresh local state & UI.
+    /// Call this after setup changes or when returning to the main scene.
+    /// </summary>
+    public void OnRefresh()
+    {
+        RefreshLocalStateFromPrefs();
+        UpdateSetupVisibility();
+    }
+
+    private void RefreshLocalStateFromPrefs()
+    {
+        _hasMainContact = HasNonEmptyString(mainEmergencyContactKey);
+        _hasEmergencyGesture = HasNonEmptyString(emergencyGestureKey);
+        LoadGestureSelectionFromPrefs();
+    }
+
+    private void LoadGestureSelectionFromPrefs()
+    {
+        _hasGestureSelection = false;
+
+        if (string.IsNullOrEmpty(gestureSelectionPrefsKey) || !PlayerPrefs.HasKey(gestureSelectionPrefsKey))
+        {
+            return;
+        }
+
+        int index = PlayerPrefs.GetInt(gestureSelectionPrefsKey, -1);
+        if (index < 0 || index > (int)HandPose.ThumbsDown)
+        {
+            return;
+        }
+
+        _savedHandPose = (HandPose)index;
+        _hasGestureSelection = true;
+    }
+
+    /// <summary>
+    /// Shows the setup UI if the main emergency contact or the emergency gesture
+    /// have not yet been configured (missing or empty PlayerPrefs values).
+    /// </summary>
+    private void UpdateSetupVisibility()
+    {
+        if (setupPanel == null)
+        {
+            Debug.LogWarning("[MainController] setupPanel is not assigned.");
+            return;
+        }
+
+        // Show setup UI if either of these is not configured
+        bool shouldShowSetup = !_hasMainContact || !_hasEmergencyGesture;
+        setupPanel.gameObject.SetActive(shouldShowSetup);
+    }
+
+    private static bool HasNonEmptyString(string key)
+    {
+        if (string.IsNullOrEmpty(key) || !PlayerPrefs.HasKey(key))
+        {
+            return false;
+        }
+
+        string value = PlayerPrefs.GetString(key, string.Empty);
+        return !string.IsNullOrWhiteSpace(value);
+    }
+
+    /// <summary>
+    /// Called when a hand pose is detected. If it matches the configured gesture
+    /// (loaded from GestureDropDownSelection), invokes onSafeModeEnabled.
+    /// </summary>
+    public void OnGestureDetected(HandPose pose)
+    {
+        if (!_hasGestureSelection)
+        {
+            return;
+        }
+
+        if (pose == _savedHandPose)
+        {
+            onSafeModeEnabled?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// Public helper to trigger the same safe-mode UnityEvent from other scripts or UI.
+    /// This simply invokes the OnSafeModeEnabled event.
+    /// </summary>
+    public void OnSafeModeEnabled()
+    {
+        onSafeModeEnabled?.Invoke();
+    }
+
+    /// <summary>
+    /// Helper overload for UnityEvents that pass an int instead of an enum.
+    /// Use this from the Inspector: the int value should match the HandPose enum index.
+    /// </summary>
+    /// <param name="poseIndex">Integer index corresponding to HandPose (0=Phone, 1=Help1, 2=Help2, 3=ThumbsDown).</param>
+    public void OnGestureDetectedFromInt(int poseIndex)
+    {
+        if (poseIndex < 0 || poseIndex > (int)HandPose.ThumbsDown)
+        {
+            return;
+        }
+
+        OnGestureDetected((HandPose)poseIndex);
+    }
+
+    /// <summary>
+    /// Public method to disable safe mode by reloading the current scene.
+    /// PlayerPrefs are left untouched; only the scene is restarted.
+    /// </summary>
+    public void DisableSafeMode()
+    {
+        var current = SceneManager.GetActiveScene();
+        if (current.IsValid())
+        {
+            SceneManager.LoadScene(current.buildIndex);
+        }
+    }
+}
+
+
