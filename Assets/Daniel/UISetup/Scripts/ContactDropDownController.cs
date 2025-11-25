@@ -106,6 +106,11 @@ public class ContactDropDownController : MonoBehaviour
         return _selectedContact;
     }
 
+    /// <summary>
+    /// True if there is at least one contact loaded into this dropdown.
+    /// </summary>
+    public bool HasContacts => _contacts.Count > 0;
+
     private void LoadContactsFromPrefs()
     {
         _contacts.Clear();
