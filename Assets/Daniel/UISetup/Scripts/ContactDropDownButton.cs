@@ -17,13 +17,9 @@ public class ContactDropDownButton : MonoBehaviour
     {
         if (contact == null)
         {
-            title.text = string.Empty;
-            subTitle.text = string.Empty;
-            if (icon != null)
-            {
-                icon.enabled = false;
-            }
-
+            // When there is no contact selected, keep whatever placeholder or
+            // instructional text was configured in the editor. Do not overwrite
+            // the existing visuals so users still see guidance.
             return;
         }
 

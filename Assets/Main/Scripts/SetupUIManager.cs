@@ -172,6 +172,9 @@ public class SetupUIManager : MonoBehaviour
         {
             newContactFormPanel.SetActive(true);
         }
+
+        // Hide the setup panel while the new contact form is visible.
+        HidePanel();
     }
 
     private bool HasAnyContactsInPrefs()

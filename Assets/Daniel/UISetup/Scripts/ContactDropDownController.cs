@@ -43,18 +43,12 @@ public class ContactDropDownController : MonoBehaviour
     {
         if (dropDownList != null)
         {
+            // Start hidden; it will be shown when we have contacts.
             dropDownList.SetActive(false);
         }
 
-        // 1. Capture contacts list from preferences
-        LoadContactsFromPrefs();
-
-        // 2. If contacts -> create children using item prefab and assign the data
-        if (_contacts.Count > 0)
-        {
-            PopulateList();
-            RestoreSelectionFromPrefs();
-        }
+        // Build from prefs on initialization so existing contacts appear immediately.
+        RefreshFromPrefs();
     }
 
     /// <summary>
@@ -110,6 +104,48 @@ public class ContactDropDownController : MonoBehaviour
     /// True if there is at least one contact loaded into this dropdown.
     /// </summary>
     public bool HasContacts => _contacts.Count > 0;
+
+    /// <summary>
+    /// Public method to rebuild the dropdown list from the current PlayerPrefs data.
+    /// Call this after adding/removing contacts in prefs so the UI reflects the latest state.
+    /// </summary>
+    public void RefreshFromPrefs()
+    {
+        // Re-load contacts from the shared prefs key.
+        LoadContactsFromPrefs();
+
+        // If we now have contacts, rebuild the list and restore selection if possible.
+        if (_contacts.Count > 0)
+        {
+            PopulateList();
+            RestoreSelectionFromPrefs();
+
+            // Ensure the dropdown list is visible now that we have items.
+            if (dropDownList != null)
+            {
+                dropDownList.SetActive(true);
+            }
+        }
+        else
+        {
+            // No contacts: clear the dropdown list and button display.
+            if (dropDownList != null)
+            {
+                foreach (Transform child in dropDownList.transform)
+                {
+                    Destroy(child.gameObject);
+                }
+                dropDownList.SetActive(false);
+            }
+
+            _selectedContact = null;
+
+            if (contactDropDownButton != null)
+            {
+                contactDropDownButton.SetContact(null);
+            }
+        }
+    }
 
     private void LoadContactsFromPrefs()
     {
@@ -203,22 +239,42 @@ public class ContactDropDownController : MonoBehaviour
 
     private void RestoreSelectionFromPrefs()
     {
+        if (_contacts.Count == 0)
+        {
+            return;
+        }
+
         string key = GetSelectionPrefsKey();
-        if (string.IsNullOrEmpty(key) || !PlayerPrefs.HasKey(key))
+        Contact found = null;
+
+        if (!string.IsNullOrEmpty(key) && PlayerPrefs.HasKey(key))
         {
-            return;
+            string savedNumber = PlayerPrefs.GetString(key);
+            if (!string.IsNullOrWhiteSpace(savedNumber))
+            {
+                found = _contacts.Find(c => c.phoneNumber == savedNumber);
+            }
         }
 
-        string savedNumber = PlayerPrefs.GetString(key);
-        if (string.IsNullOrWhiteSpace(savedNumber))
-        {
-            return;
-        }
-
-        Contact found = _contacts.Find(c => c.phoneNumber == savedNumber);
+        // If there is no saved selection or the saved one no longer exists:
         if (found == null)
         {
-            return;
+            // For the MAIN dropdown, default to the first contact and persist it.
+            if (selectionRole == ContactSelectionRole.Main)
+            {
+                found = _contacts[0];
+                SaveSelectionToPrefs(found);
+            }
+            else
+            {
+                // For SECONDARY, leave it unassigned so the button stays empty.
+                _selectedContact = null;
+                if (contactDropDownButton != null)
+                {
+                    contactDropDownButton.SetContact(null);
+                }
+                return;
+            }
         }
 
         _selectedContact = found;

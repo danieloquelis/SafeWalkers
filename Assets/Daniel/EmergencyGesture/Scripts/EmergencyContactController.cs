@@ -6,8 +6,14 @@ using Newtonsoft.Json;
 public class EmergencyContactController : MonoBehaviour
 {
 	[Header("Emergency Contacts")]
-	[Tooltip("Key used in PlayerPrefs to store emergency contact numbers.")]
+	[Tooltip("Key used in PlayerPrefs to store the full contacts list (name:number;name:number;...).")]
 	[SerializeField] private string contactsPrefsKey = "EmergencyContacts";
+
+	[Tooltip("PlayerPrefs key used to store the main selected contact phone number.")]
+	[SerializeField] private string mainContactPrefsKey = "MainEmergencyContactNumber";
+
+	[Tooltip("PlayerPrefs key used to store the secondary selected contact phone number.")]
+	[SerializeField] private string secondaryContactPrefsKey = "SecondaryEmergencyContactNumber";
 
 	[Tooltip("Fallback emergency contacts if none are stored in PlayerPrefs yet.")]
 	[SerializeField] private List<string> defaultEmergencyContacts = new List<string>();
@@ -108,14 +114,35 @@ public class EmergencyContactController : MonoBehaviour
 	}
 
 	/// <summary>
-	/// Loads the active contact list from PlayerPrefs if available,
-	/// otherwise falls back to the serialized defaultEmergencyContacts.
+	/// Loads the active contact list from PlayerPrefs.
+	/// Preference order:
+	/// 1. Use explicitly selected Main/Secondary contact numbers (if any).
+	/// 2. Otherwise, fall back to the full EmergencyContacts list.
+	/// 3. Finally, fall back to serialized defaultEmergencyContacts.
 	/// </summary>
 	public void LoadContacts()
 	{
 		_activeContacts.Clear();
 
-		if (PlayerPrefs.HasKey(contactsPrefsKey))
+		// 1) Try to use the specifically selected main / secondary contacts.
+		bool addedFromSelection = false;
+
+		string mainNumber = GetNonEmptyString(mainContactPrefsKey);
+		if (!string.IsNullOrEmpty(mainNumber))
+		{
+			_activeContacts.Add(mainNumber);
+			addedFromSelection = true;
+		}
+
+		string secondaryNumber = GetNonEmptyString(secondaryContactPrefsKey);
+		if (!string.IsNullOrEmpty(secondaryNumber) && secondaryNumber != mainNumber)
+		{
+			_activeContacts.Add(secondaryNumber);
+			addedFromSelection = true;
+		}
+
+		// 2) If we still have nothing, fall back to the full EmergencyContacts list.
+		if (!addedFromSelection && PlayerPrefs.HasKey(contactsPrefsKey))
 		{
 			string stored = PlayerPrefs.GetString(contactsPrefsKey);
 			Debug.Log($"[EmergencyContactController] Found PlayerPrefs key '{contactsPrefsKey}' with value: '{stored}'");
@@ -125,19 +152,33 @@ public class EmergencyContactController : MonoBehaviour
 				foreach (string raw in split)
 				{
 					string trimmed = raw.Trim();
-					if (!string.IsNullOrEmpty(trimmed))
+					if (string.IsNullOrEmpty(trimmed))
+						continue;
+
+					// Entries can be "number" or "name:number".
+					string number = trimmed;
+					string[] parts = trimmed.Split(':');
+					if (parts.Length >= 2)
 					{
-						_activeContacts.Add(trimmed);
+						number = parts[1].Trim();
+					}
+
+					if (string.IsNullOrWhiteSpace(number))
+						continue;
+
+					if (!_activeContacts.Contains(number))
+					{
+						_activeContacts.Add(number);
 					}
 				}
 			}
 		}
-		else
+		else if (!addedFromSelection)
 		{
 			Debug.Log($"[EmergencyContactController] No PlayerPrefs key '{contactsPrefsKey}' found, using defaultEmergencyContacts.");
 		}
 
-		// Fallback to serialized defaults if nothing was loaded
+		// 3) Fallback to serialized defaults if nothing was loaded
 		if (_activeContacts.Count == 0 && defaultEmergencyContacts != null)
 		{
 			Debug.Log($"[EmergencyContactController] Loading {defaultEmergencyContacts.Count} contacts from defaultEmergencyContacts.");
@@ -145,6 +186,17 @@ public class EmergencyContactController : MonoBehaviour
 		}
 		
 		Debug.Log($"[EmergencyContactController] Total active contacts after load: {_activeContacts.Count}");
+	}
+
+	private static string GetNonEmptyString(string key)
+	{
+		if (string.IsNullOrEmpty(key) || !PlayerPrefs.HasKey(key))
+		{
+			return null;
+		}
+
+		string value = PlayerPrefs.GetString(key);
+		return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 	}
 
 	/// <summary>
