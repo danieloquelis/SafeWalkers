@@ -128,12 +128,14 @@ public class ContactDropDownController : MonoBehaviour
         }
         else
         {
-            // No contacts: clear the dropdown list and button display.
+            // No contacts: clear dynamically created items but keep the first child,
+            // which is a scene-authored placeholder used to add more contacts.
             if (dropDownList != null)
             {
-                foreach (Transform child in dropDownList.transform)
+                Transform parent = dropDownList.transform;
+                for (int i = parent.childCount - 1; i >= 1; i--)
                 {
-                    Destroy(child.gameObject);
+                    Destroy(parent.GetChild(i).gameObject);
                 }
                 dropDownList.SetActive(false);
             }
@@ -204,13 +206,15 @@ public class ContactDropDownController : MonoBehaviour
 
         Transform parent = dropDownList.transform;
 
-        // Clear existing children
-        for (int i = parent.childCount - 1; i >= 0; i--)
+        // Clear dynamically-created items but keep the first child,
+        // which is a scene-authored placeholder that should always remain
+        // at the beginning of the list.
+        for (int i = parent.childCount - 1; i >= 1; i--)
         {
             Destroy(parent.GetChild(i).gameObject);
         }
 
-        // Instantiate one item per contact
+        // Instantiate one item per contact, appended after the placeholder.
         foreach (Contact contact in _contacts)
         {
             ContactDropDownItem item = Instantiate(contactDropDownItemPrefab, parent);

@@ -5,6 +5,9 @@ using LocalWake.Unity;
 
 public class SetupUIManager : MonoBehaviour
 {
+    [System.Serializable]
+    public class StringEvent : UnityEvent<string> { }
+
     [Header("Panel")]
     [SerializeField] private RectTransform setupPanel;
 
@@ -38,6 +41,13 @@ public class SetupUIManager : MonoBehaviour
     [Header("Events")]
     [Tooltip("Invoked after preferences are saved and the profile is stored successfully.")]
     [SerializeField] private UnityEvent onSaveSuccessful;
+
+    [Tooltip("Invoked when validation fails before saving. Receives a human-readable error message.")]
+    [SerializeField] private StringEvent onValidationFailed;
+
+    [Header("Main Scene")]
+    [Tooltip("Optional reference to the MainController in the main scene. If assigned, it will be refreshed after a successful save so OnSceneReady can fire.")]
+    [SerializeField] private MainController mainController;
 
     private void Awake()
     {
@@ -78,12 +88,93 @@ public class SetupUIManager : MonoBehaviour
     /// </summary>
     public void OnSave()
     {
+        if (!ValidateRequiredFields(out string errorMessage))
+        {
+            onValidationFailed?.Invoke(errorMessage);
+            return;
+        }
+
         SavePrefs();
         SaveWakeWordProfile();
         MarkOnboarded();
 
+        // Notify the main scene controller that preferences have changed so it can
+        // re-check readiness and potentially fire OnSceneReady.
+        if (mainController != null)
+        {
+            mainController.OnRefresh();
+        }
+
         onSaveSuccessful?.Invoke();
         HidePanel();
+    }
+
+    /// <summary>
+    /// Ensures that the main emergency contact and the emergency gesture have values
+    /// before allowing the setup to be saved.
+    /// This uses the "current form values" if present, otherwise falls back to any
+    /// existing PlayerPrefs values so that previously configured data is accepted.
+    /// </summary>
+    private bool ValidateRequiredFields(out string errorMessage)
+    {
+        // MAIN CONTACT: prefer the current form value, otherwise fall back to saved prefs.
+        string candidateMain = mainEmergencyContactNumber;
+        if (string.IsNullOrWhiteSpace(candidateMain) &&
+            !string.IsNullOrEmpty(mainEmergencyContactKey) &&
+            PlayerPrefs.HasKey(mainEmergencyContactKey))
+        {
+            candidateMain = PlayerPrefs.GetString(mainEmergencyContactKey, string.Empty);
+        }
+
+        bool hasMain = !string.IsNullOrWhiteSpace(candidateMain);
+
+        // GESTURE: prefer the current form value, otherwise fall back to either:
+        //  - the legacy string key (EmergencyGesture), or
+        //  - the gesture selection index stored by GestureDropDown ("GestureDropDownSelection").
+        string candidateGesture = emergencyGesture;
+
+        if (string.IsNullOrWhiteSpace(candidateGesture) &&
+            !string.IsNullOrEmpty(emergencyGestureKey) &&
+            PlayerPrefs.HasKey(emergencyGestureKey))
+        {
+            candidateGesture = PlayerPrefs.GetString(emergencyGestureKey, string.Empty);
+        }
+
+        bool hasGesture = !string.IsNullOrWhiteSpace(candidateGesture);
+
+        if (!hasGesture)
+        {
+            const string gestureSelectionPrefsKey = "GestureDropDownSelection";
+            if (PlayerPrefs.HasKey(gestureSelectionPrefsKey))
+            {
+                int index = PlayerPrefs.GetInt(gestureSelectionPrefsKey, -1);
+                if (index >= 0 && index <= (int)HandPose.ThumbsDown)
+                {
+                    hasGesture = true;
+                }
+            }
+        }
+
+        if (hasMain && hasGesture)
+        {
+            errorMessage = null;
+            return true;
+        }
+
+        if (!hasMain && !hasGesture)
+        {
+            errorMessage = "Main emergency contact and emergency gesture are required.";
+        }
+        else if (!hasMain)
+        {
+            errorMessage = "Main emergency contact is required.";
+        }
+        else
+        {
+            errorMessage = "Emergency gesture is required.";
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -193,19 +284,24 @@ public class SetupUIManager : MonoBehaviour
 
     private void SavePrefs()
     {
-        if (!string.IsNullOrEmpty(mainEmergencyContactKey))
+        // Only write values that are actually provided by the current form.
+        // This avoids overwriting previously saved (and still valid) preferences with empty strings.
+        if (!string.IsNullOrEmpty(mainEmergencyContactKey) &&
+            !string.IsNullOrWhiteSpace(mainEmergencyContactNumber))
         {
-            PlayerPrefs.SetString(mainEmergencyContactKey, mainEmergencyContactNumber ?? string.Empty);
+            PlayerPrefs.SetString(mainEmergencyContactKey, mainEmergencyContactNumber);
         }
 
-        if (!string.IsNullOrEmpty(secondaryEmergencyContactKey))
+        if (!string.IsNullOrEmpty(secondaryEmergencyContactKey) &&
+            !string.IsNullOrWhiteSpace(secondaryEmergencyContactNumber))
         {
-            PlayerPrefs.SetString(secondaryEmergencyContactKey, secondaryEmergencyContactNumber ?? string.Empty);
+            PlayerPrefs.SetString(secondaryEmergencyContactKey, secondaryEmergencyContactNumber);
         }
 
-        if (!string.IsNullOrEmpty(emergencyGestureKey))
+        if (!string.IsNullOrEmpty(emergencyGestureKey) &&
+            !string.IsNullOrWhiteSpace(emergencyGesture))
         {
-            PlayerPrefs.SetString(emergencyGestureKey, emergencyGesture ?? string.Empty);
+            PlayerPrefs.SetString(emergencyGestureKey, emergencyGesture);
         }
 
         PlayerPrefs.Save();

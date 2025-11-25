@@ -15,6 +15,10 @@ public class MainController : MonoBehaviour
     [Header("Setup UI")]
     [SerializeField] private RectTransform setupPanel;
 
+    [Header("Scene Events")]
+    [Tooltip("Invoked once when the scene is considered ready: main contact and emergency gesture are configured in PlayerPrefs.")]
+    public UnityEvent OnSceneReady;
+
     [Header("Player Pref Keys")]
     [SerializeField] private string mainEmergencyContactKey = "MainEmergencyContactNumber";
     [SerializeField] private string emergencyGestureKey = "EmergencyGesture";
@@ -30,6 +34,7 @@ public class MainController : MonoBehaviour
     private bool _hasEmergencyGesture;
     private bool _hasGestureSelection;
     private HandPose _savedHandPose;
+    private bool _sceneReadyInvoked;
 
     private void Start()
     {
@@ -44,6 +49,7 @@ public class MainController : MonoBehaviour
     {
         RefreshLocalStateFromPrefs();
         UpdateSetupVisibility();
+        TryInvokeSceneReady();
     }
 
     private void RefreshLocalStateFromPrefs()
@@ -84,9 +90,34 @@ public class MainController : MonoBehaviour
             return;
         }
 
-        // Show setup UI if either of these is not configured
-        bool shouldShowSetup = !_hasMainContact || !_hasEmergencyGesture;
+        // Show setup UI if either of these is not configured.
+        // We consider the gesture "configured" when a gesture selection exists.
+        bool shouldShowSetup = !_hasMainContact || !_hasGestureSelection;
         setupPanel.gameObject.SetActive(shouldShowSetup);
+    }
+
+    /// <summary>
+    /// Checks whether the scene is ready (main contact and gesture selection are configured)
+    /// and, if so, invokes <see cref="OnSceneReady"/> exactly once per scene lifetime.
+    /// </summary>
+    private void TryInvokeSceneReady()
+    {
+        if (_sceneReadyInvoked)
+        {
+            return;
+        }
+
+        // Scene is considered ready when we have a main contact AND a chosen gesture
+        // (stored via GestureDropDownSelection).
+        bool isSceneReady = _hasMainContact && _hasGestureSelection;
+        if (!isSceneReady)
+        {
+            return;
+        }
+
+        _sceneReadyInvoked = true;
+        Debug.Log("[MainController] Scene ready: main emergency contact and gesture selection are configured.");
+        OnSceneReady?.Invoke();
     }
 
     private static bool HasNonEmptyString(string key)
