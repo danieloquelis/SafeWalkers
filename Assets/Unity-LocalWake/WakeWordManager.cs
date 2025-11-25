@@ -35,6 +35,12 @@ namespace LocalWake.Unity
         [Header("Debugging")]
         [SerializeField] bool debugLogging = false;
 
+        [Header("Persistence")]
+        [Tooltip("If true, the manager will try to load a saved wake-word profile on startup.")]
+        [SerializeField] bool loadProfileOnStart = true;
+        [Tooltip("Identifier for the profile to load/save (e.g., per-user).")]
+        [SerializeField] string profileId = "default";
+
         const string LogTag = "[WakeWord]";
 
         public event Action<string, float> OnWakeWordDetected;
@@ -82,6 +88,39 @@ namespace LocalWake.Unity
                 timeSteps);
 
             Log($"Awake: sampleRate={sampleRate}, windowSeconds={windowSeconds}, bufferSamples={bufferSamples}, embeddingDim={embeddingDim}, timeSteps={timeSteps}");
+
+            // Optionally load a previously-saved wake-word profile so the user
+            // does not need to re-record samples every time.
+            if (loadProfileOnStart)
+            {
+                if (WakeWordProfileStorage.TryLoadProfile(profileId, out var profile) &&
+                    profile != null &&
+                    profile.references != null &&
+                    profile.references.Count > 0)
+                {
+                    var list = new List<float[,]>();
+                    foreach (var ser in profile.references)
+                    {
+                        var m = WakeWordProfileStorage.ToMatrix(ser);
+                        if (m != null)
+                            list.Add(m);
+                    }
+
+                    if (list.Count > 0)
+                    {
+                        SetReferences(profile.wakeWordName, list);
+                        Log($"Awake: Loaded profile '{profileId}' with {list.Count} references.");
+                    }
+                    else
+                    {
+                        Log($"Awake: Profile '{profileId}' loaded but contained no valid embeddings.");
+                    }
+                }
+                else
+                {
+                    Log($"Awake: No saved profile found for id '{profileId}'.");
+                }
+            }
         }
 
         void OnDestroy()

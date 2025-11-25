@@ -52,6 +52,7 @@ namespace LocalWake.Unity
         bool _isCapturing;
 
         float _nextAudioLogTime;
+        const string DefaultProfileId = "default";
 
         const string LogTag = "[WakeWord]";
 
@@ -271,6 +272,41 @@ namespace LocalWake.Unity
         public void SetWakeWordName(string name)
         {
             wakeWordName = name;
+        }
+
+        /// <summary>
+        /// Serialize current recorded embeddings and save them to disk as a wake-word profile.
+        /// Call this after recording samples; the profile will be loaded automatically by
+        /// WakeWordManager (using the same profileId) on next app start.
+        /// </summary>
+        /// <param name="profileId">Identifier for the profile (e.g., per-user). If empty, 'default' is used.</param>
+        public void SaveProfile(string profileId = DefaultProfileId)
+        {
+            if (_samples.Count == 0)
+            {
+                LogWarning("SaveProfile: No samples to save.");
+                return;
+            }
+
+            var profile = new WakeWordProfileStorage.WakeWordProfile
+            {
+                wakeWordName = wakeWordName
+            };
+
+            foreach (var emb in _samples)
+            {
+                var ser = WakeWordProfileStorage.FromMatrix(emb);
+                if (ser != null)
+                    profile.references.Add(ser);
+            }
+
+            if (profile.references.Count == 0)
+            {
+                LogWarning("SaveProfile: All embeddings were null or invalid, nothing saved.");
+                return;
+            }
+
+            WakeWordProfileStorage.SaveProfile(profileId, profile);
         }
 
         void Log(string message)
