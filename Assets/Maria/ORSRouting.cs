@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Rendering;
 using Newtonsoft.Json.Linq;
 
 public class ORS_Routing : MonoBehaviour
@@ -22,14 +23,39 @@ public class ORS_Routing : MonoBehaviour
     [Header("XR Rig")]
     public Transform xrRig;
 
+    [Header("Line Styling")]
+    [SerializeField] private Material flowLineMaterial;
+    [SerializeField, Range(0.01f, 0.5f)] private float lineWidth = 0.12f;
+    [SerializeField, Range(0.25f, 4f)] private float arrowWorldLength = 1.25f;
+    [SerializeField, Range(0.05f, 5f)] private float textureAnimationSpeed = 0.8f;
+    [SerializeField, Range(0f, 1f)] private float lineAlpha = 0.65f;
+    [SerializeField] private Color lineTint = Color.white;
+    [SerializeField, Range(0f, 0.5f)] private float routeHeightOffset = 0.05f;
+
+    [Header("Visibility")]
+    [SerializeField] private bool revealRouteFromPlayer = true;
+    [SerializeField, Tooltip("Meters of line shown ahead of the player. Set to 0 to show the full route.")]
+    [Min(0f)] private float maxVisibleDistance = 35f;
+
     private List<Vector3> cachedRoute = new List<Vector3>();
     private bool routeReady = false;
     private bool routeRequestInProgress = false;
+    private readonly List<Vector3> visibleRouteBuffer = new List<Vector3>();
+    private Material runtimeLineMaterial;
+    private float textureOffset;
 
     public const float EarthRadius = 6371000f;
 
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+    private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+
     void Start()
     {
+        InitializeLineRenderer();
+
         if (xrRig == null)
             Debug.LogWarning("XR Rig not assigned. Route will not snap automatically.");
 
@@ -45,18 +71,32 @@ public class ORS_Routing : MonoBehaviour
         StartCoroutine(RequestRoute(startLatLon, endLatLon, snapPlayer: true));
     }
 
+    void OnDestroy()
+    {
+        if (runtimeLineMaterial == null) return;
+
+        if (Application.isPlaying)
+            Destroy(runtimeLineMaterial);
+        else
+            DestroyImmediate(runtimeLineMaterial);
+    }
+
     void Update()
     {
-        if (!routeReady || routeRequestInProgress) return;
-        if (Camera.main == null) return;
+        AnimateLineTexture();
 
-        Vector3 playerPos = xrRig != null ? xrRig.position : Camera.main.transform.position;
+        if (!routeReady || routeRequestInProgress) return;
+
+        Vector3 playerPos = GetPlayerPosition();
         float dist = DistanceToRoute(playerPos, cachedRoute);
 
         if (dist > offRouteThreshold)
         {
             Debug.LogWarning("You are off the planned route!");
         }
+
+        if (revealRouteFromPlayer)
+            UpdateVisibleRoute(playerPos);
     }
 
     IEnumerator RequestRoute(Vector2 start, Vector2 end, bool snapPlayer = false)
@@ -155,14 +195,228 @@ public class ORS_Routing : MonoBehaviour
 
         float x = (lonRad - lon0) * Mathf.Cos(lat0) * EarthRadius;
         float z = (latRad - lat0) * EarthRadius;
-        return new Vector3(x, 0.05f, z);
+        return new Vector3(x, routeHeightOffset, z);
     }
 
     void DrawRoute()
     {
         if (lineRenderer == null) return;
-        lineRenderer.positionCount = cachedRoute.Count;
-        lineRenderer.SetPositions(cachedRoute.ToArray());
+
+        if (cachedRoute.Count < 2)
+        {
+            lineRenderer.positionCount = 0;
+            return;
+        }
+
+        if (revealRouteFromPlayer)
+            UpdateVisibleRoute(GetPlayerPosition());
+        else
+            ApplyRouteToRenderer(cachedRoute);
+    }
+
+    void InitializeLineRenderer()
+    {
+        if (lineRenderer == null) return;
+
+        lineRenderer.loop = false;
+        lineRenderer.alignment = LineAlignment.View;
+        lineRenderer.textureMode = LineTextureMode.Tile;
+        lineRenderer.generateLightingData = false;
+        lineRenderer.widthMultiplier = lineWidth;
+
+        if (flowLineMaterial != null)
+            runtimeLineMaterial = new Material(flowLineMaterial);
+        else if (lineRenderer.sharedMaterial != null)
+            runtimeLineMaterial = new Material(lineRenderer.sharedMaterial);
+
+        if (runtimeLineMaterial != null)
+        {
+            runtimeLineMaterial.name += " (Runtime)";
+            ApplyLineTint();
+            lineRenderer.material = runtimeLineMaterial;
+        }
+
+        Color tinted = new Color(lineTint.r, lineTint.g, lineTint.b, lineAlpha);
+        lineRenderer.startColor = tinted;
+        lineRenderer.endColor = tinted;
+    }
+
+    void ApplyLineTint()
+    {
+        if (runtimeLineMaterial == null) return;
+
+        Color tinted = new Color(lineTint.r, lineTint.g, lineTint.b, lineAlpha);
+
+        if (runtimeLineMaterial.HasProperty(BaseColorId))
+            runtimeLineMaterial.SetColor(BaseColorId, tinted);
+        if (runtimeLineMaterial.HasProperty(ColorId))
+            runtimeLineMaterial.SetColor(ColorId, tinted);
+        if (runtimeLineMaterial.HasProperty(EmissionColorId))
+            runtimeLineMaterial.SetColor(EmissionColorId, tinted * 0.25f);
+
+        if (runtimeLineMaterial.HasProperty("_Surface"))
+            runtimeLineMaterial.SetFloat("_Surface", 1f);
+        if (runtimeLineMaterial.HasProperty("_ZWrite"))
+            runtimeLineMaterial.SetFloat("_ZWrite", 0f);
+        if (runtimeLineMaterial.HasProperty("_DstBlend"))
+            runtimeLineMaterial.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+        if (runtimeLineMaterial.HasProperty("_DstBlendAlpha"))
+            runtimeLineMaterial.SetFloat("_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+
+        runtimeLineMaterial.renderQueue = (int)RenderQueue.Transparent;
+    }
+
+    void AnimateLineTexture()
+    {
+        if (runtimeLineMaterial == null) return;
+        if (Mathf.Approximately(textureAnimationSpeed, 0f)) return;
+
+        textureOffset = Mathf.Repeat(textureOffset + textureAnimationSpeed * Time.deltaTime, 1f);
+        Vector2 offset = new Vector2(textureOffset, 0f);
+
+        if (runtimeLineMaterial.HasProperty(BaseMapId))
+            runtimeLineMaterial.SetTextureOffset(BaseMapId, offset);
+        if (runtimeLineMaterial.HasProperty(MainTexId))
+            runtimeLineMaterial.SetTextureOffset(MainTexId, offset);
+    }
+
+    Vector3 GetPlayerPosition()
+    {
+        if (xrRig != null)
+            return xrRig.position;
+
+        if (Camera.main != null)
+            return Camera.main.transform.position;
+
+        if (cachedRoute.Count > 0)
+            return cachedRoute[0];
+
+        return Vector3.zero;
+    }
+
+    void UpdateVisibleRoute(Vector3 playerPos)
+    {
+        if (lineRenderer == null || cachedRoute.Count < 2) return;
+
+        if (!TryProjectOnRoute(playerPos, out Vector3 projection, out int segmentIndex, out _))
+        {
+            ApplyRouteToRenderer(cachedRoute);
+            return;
+        }
+
+        visibleRouteBuffer.Clear();
+        visibleRouteBuffer.Add(SetHeight(projection));
+
+        bool limitLength = maxVisibleDistance > Mathf.Epsilon;
+        float remainingDistance = maxVisibleDistance;
+        Vector3 previousSourcePoint = projection;
+
+        for (int i = segmentIndex + 1; i < cachedRoute.Count; i++)
+        {
+            Vector3 nextSourcePoint = cachedRoute[i];
+            float segmentLength = Vector3.Distance(previousSourcePoint, nextSourcePoint);
+
+            if (limitLength && segmentLength >= remainingDistance && remainingDistance > Mathf.Epsilon)
+            {
+                Vector3 clampedPoint = Vector3.Lerp(previousSourcePoint, nextSourcePoint,
+                    Mathf.Clamp01(remainingDistance / Mathf.Max(segmentLength, 0.0001f)));
+                visibleRouteBuffer.Add(SetHeight(clampedPoint));
+                break;
+            }
+
+            visibleRouteBuffer.Add(SetHeight(nextSourcePoint));
+            previousSourcePoint = nextSourcePoint;
+
+            if (limitLength)
+            {
+                remainingDistance -= segmentLength;
+                if (remainingDistance <= Mathf.Epsilon)
+                    break;
+            }
+        }
+
+        ApplyRouteToRenderer(visibleRouteBuffer);
+    }
+
+    void ApplyRouteToRenderer(IList<Vector3> points)
+    {
+        if (lineRenderer == null || points == null) return;
+
+        if (points.Count < 2)
+        {
+            lineRenderer.positionCount = 0;
+            return;
+        }
+
+        lineRenderer.positionCount = points.Count;
+        for (int i = 0; i < points.Count; i++)
+            lineRenderer.SetPosition(i, points[i]);
+
+        UpdateTextureTiling(CalculateLength(points));
+    }
+
+    float CalculateLength(IList<Vector3> points)
+    {
+        if (points == null || points.Count < 2) return 0f;
+
+        float length = 0f;
+        for (int i = 0; i < points.Count - 1; i++)
+            length += Vector3.Distance(points[i], points[i + 1]);
+
+        return length;
+    }
+
+    void UpdateTextureTiling(float length)
+    {
+        if (lineRenderer == null || length <= 0f) return;
+
+        float repeatCount = Mathf.Max(1f, length / Mathf.Max(arrowWorldLength, 0.01f));
+        lineRenderer.textureScale = new Vector2(repeatCount, 1f);
+    }
+
+    bool TryProjectOnRoute(Vector3 point, out Vector3 projection, out int segmentIndex, out float segmentT)
+    {
+        projection = Vector3.zero;
+        segmentIndex = -1;
+        segmentT = 0f;
+
+        if (cachedRoute.Count < 2) return false;
+
+        float minSqr = float.MaxValue;
+        for (int i = 0; i < cachedRoute.Count - 1; i++)
+        {
+            Vector3 candidate = ProjectPointOnSegment(point, cachedRoute[i], cachedRoute[i + 1], out float t);
+            float sqr = (candidate - point).sqrMagnitude;
+            if (sqr < minSqr)
+            {
+                minSqr = sqr;
+                projection = candidate;
+                segmentIndex = i;
+                segmentT = t;
+            }
+        }
+
+        return segmentIndex >= 0;
+    }
+
+    Vector3 ProjectPointOnSegment(Vector3 point, Vector3 a, Vector3 b, out float t)
+    {
+        Vector3 ab = b - a;
+        float denom = ab.sqrMagnitude;
+        if (denom < Mathf.Epsilon)
+        {
+            t = 0f;
+            return a;
+        }
+
+        t = Mathf.Clamp01(Vector3.Dot(point - a, ab) / denom);
+        return a + ab * t;
+    }
+
+    Vector3 SetHeight(Vector3 source)
+    {
+        source.y = routeHeightOffset;
+        return source;
     }
 
     float DistanceToRoute(Vector3 point, List<Vector3> route)
