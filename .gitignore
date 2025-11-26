@@ -104,3 +104,5 @@ Assets/Resources/ors_api_key.txt.meta
 # SafeWalk pusher credentials asset (created locally per developer)
 Assets/Resources/SafeWalkPusherSettings.asset
 Assets/Resources/SafeWalkPusherSettings.asset.meta
+Assets/Resources/google_maps_api_key.txt
+Assets/Resources/google_maps_api_key.txt.meta
