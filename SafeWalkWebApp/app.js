@@ -10,6 +10,7 @@ const sessionLabel = document.getElementById("sessionLabel");
 const pusherStatus = document.getElementById("pusherStatus");
 const remoteLoading = document.getElementById("remoteLoading");
 const navigateBtn = document.getElementById("navigateBtn");
+const connectBtn = document.getElementById("connectBtn");
 const urlParams = new URLSearchParams(window.location.search);
 const sessionId = (urlParams.get("sessionId") || "").trim();
 
@@ -32,26 +33,47 @@ function setStatus(message) {
 }
 
 function ensureMap() {
-  if (mapInstance || !window.L) return;
+  if (mapInstance) {
+    console.log("[Map] Map already initialized");
+    return;
+  }
 
-  mapInstance = L.map("map", {
-    zoomControl: false,
-    attributionControl: false,
-    closePopupOnClick: false,
-    dragging: true,
-  }).setView([0, 0], MAP_ZOOM);
+  if (!window.L) {
+    console.warn("[Map] Leaflet not loaded yet");
+    return;
+  }
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-  }).addTo(mapInstance);
+  console.log("[Map] Initializing map...");
+  try {
+    mapInstance = L.map("map", {
+      zoomControl: false,
+      attributionControl: false,
+      closePopupOnClick: false,
+      dragging: true,
+    }).setView([0, 0], MAP_ZOOM);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+    }).addTo(mapInstance);
+
+    console.log("[Map] Map initialized successfully");
+  } catch (err) {
+    console.error("[Map] Failed to initialize map:", err);
+  }
 }
 
 function updateMap(lat, lng) {
+  console.log(`[Map] Update requested: lat=${lat}, lng=${lng}`);
   ensureMap();
-  if (!mapInstance) return;
+
+  if (!mapInstance) {
+    console.error("[Map] Cannot update - map not initialized");
+    return;
+  }
 
   const coords = [lat, lng];
   if (!userMarker) {
+    console.log("[Map] Creating marker");
     userMarker = L.circleMarker(coords, {
       radius: 7,
       weight: 2,
@@ -60,12 +82,15 @@ function updateMap(lat, lng) {
       fillOpacity: 0.85,
     }).addTo(mapInstance);
   } else {
+    console.log("[Map] Updating marker position");
     userMarker.setLatLng(coords);
   }
 
   if (!lastCoords) {
+    console.log("[Map] First location - centering map");
     mapInstance.setView(coords, MAP_ZOOM);
   } else {
+    console.log("[Map] Panning to new location");
     mapInstance.panTo(coords, { animate: true, duration: 0.6 });
   }
 
@@ -152,223 +177,23 @@ async function joinVideoChannel() {
 
     await client.publish([localAudioTrack, localVideoTrack]);
     joined = true;
+    if (connectBtn) {
+      connectBtn.classList.add("hidden");
+      connectBtn.disabled = true;
+      connectBtn.textContent = "Connected";
+    }
   } catch (err) {
     console.error("Failed to join Agora channel", err);
-    setStatus("Camera access denied. Please allow permissions and reload.");
-  }
-}
-
-function initPusher() {
-  if (pusher || !window.Pusher) return;
-
-  Pusher.logToConsole = false;
-  pusher = new Pusher(PUSHER_KEY, {
-    cluster: PUSHER_CLUSTER,
-    forceTLS: true,
-  });
-
-  pusher.connection.bind("state_change", (state) => {
-    setStatus(`Location stream: ${state.current}`);
-  });
-
-  pusher.connection.bind("error", (err) => {
-    console.error("Pusher error", err);
-    setStatus("Location stream error. Retrying…");
-  });
-}
-
-function subscribeToLocations() {
-  if (!sessionId) return;
-  initPusher();
-  if (!pusher) return;
-
-  if (locationChannel) {
-    pusher.unsubscribe(locationChannel.name);
-  }
-
-  const channelName = SESSION_CHANNEL_PREFIX + sessionId;
-  locationChannel = pusher.subscribe(channelName);
-
-  locationChannel.bind("pusher:subscription_succeeded", () => {
-    setStatus("Connected to live location feed");
-  });
-
-  locationChannel.bind(LOCATION_EVENT, (payload) => {
-    const data =
-      typeof payload === "string" ? JSON.parse(payload) : payload || {};
-    if (
-      typeof data.latitude === "number" &&
-      typeof data.longitude === "number"
-    ) {
-      updateMap(data.latitude, data.longitude);
-      setStatus(
-        `Last update • ${new Date(
-          data.timestamp || Date.now()
-        ).toLocaleTimeString()}`
-      );
+    setStatus("Camera access denied. Please allow permissions and retry.");
+    if (connectBtn) {
+      connectBtn.disabled = false;
+      connectBtn.textContent = "Retry connection";
     }
-  });
-}
-
-async function startExperience() {
-  initMapInteractions();
-
-  if (!sessionId) {
-    setStatus(
-      "Missing sessionId. Append ?sessionId=XYZ to the URL shared by the headset."
-    );
-    return;
-  }
-
-  if (sessionLabel) {
-    sessionLabel.textContent = sessionId;
-  }
-
-  await joinVideoChannel();
-  subscribeToLocations();
-}
-
-document.addEventListener("DOMContentLoaded", startExperience);
-// SafeWalkers web client
-// Uses Agora Web SDK (via CDN) to join the same channel as the Unity headset.
-
-// IMPORTANT:
-// - The session id passed in the URL (?sessionId=abcd1234) is used as the Agora channel name.
-// - App ID is not secret and matches the Unity configuration.
-
-const AGORA_APP_ID = "7dfebc6ae4c64cf0b067d3d436b7fb44";
-const AGORA_TOKEN = null; // No token for testing; add one here later if you enable token auth.
-
-const sessionIdInput = document.getElementById("sessionIdInput");
-const joinBtn = document.getElementById("joinBtn");
-const leaveBtn = document.getElementById("leaveBtn");
-const yearSpan = document.getElementById("year");
-
-if (yearSpan) {
-  yearSpan.textContent = new Date().getFullYear().toString();
-}
-
-const urlParams = new URLSearchParams(window.location.search);
-const sessionIdFromUrl = urlParams.get("sessionId") || "";
-
-sessionIdInput.value = sessionIdFromUrl;
-
-// Agora client and tracks
-let client = null;
-let localAudioTrack = null;
-let localVideoTrack = null;
-let joined = false;
-
-async function initClient() {
-  if (client) {
-    return client;
-  }
-
-  if (!window.AgoraRTC) {
-    console.error(
-      "AgoraRTC is not available. Check that the CDN script is loading correctly."
-    );
-    alert(
-      "Video SDK failed to load. Please refresh and check your network connectivity."
-    );
-    return null;
-  }
-
-  client = AgoraRTC.createClient({
-    mode: "rtc",
-    codec: "vp8",
-  });
-
-  // Remote user published media
-  client.on("user-published", async (user, mediaType) => {
-    await client.subscribe(user, mediaType);
-
-    if (mediaType === "video") {
-      const remotePlayerContainer = document.getElementById("remote-player");
-      if (remotePlayerContainer) {
-        // Clear placeholder
-        remotePlayerContainer.innerHTML = "";
-        user.videoTrack.play("remote-player");
-      }
-    }
-
-    if (mediaType === "audio") {
-      user.audioTrack.play();
-    }
-  });
-
-  // Remote user left or unpublished
-  client.on("user-unpublished", (user, mediaType) => {
-    if (mediaType === "video") {
-      const remotePlayerContainer = document.getElementById("remote-player");
-      if (remotePlayerContainer) {
-        remotePlayerContainer.innerHTML =
-          '<div class="video-placeholder">Remote video paused</div>';
-      }
-    }
-  });
-
-  client.on("user-left", () => {
-    const remotePlayerContainer = document.getElementById("remote-player");
-    if (remotePlayerContainer) {
-      remotePlayerContainer.innerHTML =
-        '<div class="video-placeholder">Remote user left</div>';
-    }
-  });
-
-  return client;
-}
-
-async function joinCall() {
-  if (joined) return;
-
-  const channelName = sessionIdInput.value.trim();
-  if (!channelName) {
-    alert(
-      "Missing session ID. Make sure your link contains ?sessionId=... or type it in."
-    );
-    return;
-  }
-
-  const rtcClient = await initClient();
-  if (!rtcClient) return;
-
-  try {
-    // Request camera/mic permission and create local tracks
-    [localAudioTrack, localVideoTrack] =
-      await AgoraRTC.createMicrophoneAndCameraTracks();
-
-    const uid = await rtcClient.join(
-      AGORA_APP_ID,
-      channelName,
-      AGORA_TOKEN,
-      null
-    );
-    console.log("Joined Agora channel:", channelName, "with uid:", uid);
-
-    // Play local preview
-    const localPlayerContainer = document.getElementById("local-player");
-    if (localPlayerContainer) {
-      localPlayerContainer.innerHTML = "";
-      localVideoTrack.play("local-player");
-    }
-
-    // Publish local tracks so the headset can subscribe
-    await rtcClient.publish([localAudioTrack, localVideoTrack]);
-    joined = true;
-    joinBtn.disabled = true;
-    leaveBtn.disabled = false;
-  } catch (err) {
-    console.error("Failed to join Agora channel:", err);
-    alert(
-      "Unable to start the call. Please check camera/microphone permissions and try again."
-    );
   }
 }
 
-async function leaveCall() {
-  if (!joined || !client) return;
-
+async function leaveVideoChannel() {
+  if (!joined || !agoraClient) return;
   try {
     if (localAudioTrack) {
       localAudioTrack.stop();
@@ -380,33 +205,153 @@ async function leaveCall() {
       localVideoTrack.close();
       localVideoTrack = null;
     }
-
-    await client.leave();
-
-    const localPlayerContainer = document.getElementById("local-player");
-    if (localPlayerContainer) {
-      localPlayerContainer.innerHTML =
-        '<div class="video-placeholder">Your camera preview</div>';
-    }
-
-    const remotePlayerContainer = document.getElementById("remote-player");
-    if (remotePlayerContainer) {
-      remotePlayerContainer.innerHTML =
-        '<div class="video-placeholder">Waiting for remote video…</div>';
-    }
-
-    joined = false;
-    joinBtn.disabled = false;
-    leaveBtn.disabled = true;
+    await agoraClient.leave();
   } catch (err) {
-    console.error("Error while leaving call:", err);
+    console.error("Error leaving Agora channel", err);
+  } finally {
+    joined = false;
+    const localPlayer = document.getElementById("local-player");
+    if (localPlayer) {
+      localPlayer.innerHTML = '<div class="video-loading">Camera preview</div>';
+    }
+    if (remoteLoading) {
+      remoteLoading.style.display = "flex";
+      remoteLoading.textContent = "Waiting for SafeWalker…";
+    }
+    if (connectBtn) {
+      connectBtn.classList.remove("hidden");
+      connectBtn.disabled = false;
+      connectBtn.textContent = "Reconnect";
+    }
   }
 }
 
-joinBtn.addEventListener("click", () => {
-  joinCall();
-});
+function initPusher() {
+  if (pusher) {
+    console.log("[Pusher] Already initialized");
+    return;
+  }
 
-leaveBtn.addEventListener("click", () => {
-  leaveCall();
+  if (!window.Pusher) {
+    console.error("[Pusher] Pusher library not loaded");
+    return;
+  }
+
+  console.log(
+    "[Pusher] Initializing with key:",
+    PUSHER_KEY,
+    "cluster:",
+    PUSHER_CLUSTER
+  );
+  Pusher.logToConsole = false; // Use our own logging
+  pusher = new Pusher(PUSHER_KEY, {
+    cluster: PUSHER_CLUSTER,
+    forceTLS: true,
+  });
+
+  pusher.connection.bind("state_change", (state) => {
+    console.log("[Pusher] Connection state:", state.current);
+    setStatus(`Location stream: ${state.current}`);
+  });
+
+  pusher.connection.bind("error", (err) => {
+    console.error("[Pusher] Connection error:", err);
+    setStatus("Location stream error. Retrying…");
+  });
+}
+
+function subscribeToLocations() {
+  if (!sessionId) {
+    console.warn("[Pusher] Cannot subscribe - no sessionId");
+    return;
+  }
+
+  initPusher();
+  if (!pusher) {
+    console.error("[Pusher] Pusher not initialized");
+    return;
+  }
+
+  if (locationChannel) {
+    pusher.unsubscribe(locationChannel.name);
+  }
+
+  const channelName = SESSION_CHANNEL_PREFIX + sessionId;
+  console.log("[Pusher] Subscribing to channel:", channelName);
+  locationChannel = pusher.subscribe(channelName);
+
+  locationChannel.bind("pusher:subscription_succeeded", () => {
+    console.log("[Pusher] Subscription succeeded");
+    setStatus("Connected to live location feed");
+  });
+
+  locationChannel.bind(LOCATION_EVENT, (payload) => {
+    console.log("[Pusher] Location event received:", payload);
+    const data =
+      typeof payload === "string" ? JSON.parse(payload) : payload || {};
+    console.log("[Pusher] Parsed data:", data);
+
+    if (
+      typeof data.latitude === "number" &&
+      typeof data.longitude === "number"
+    ) {
+      console.log(
+        `[Pusher] Valid location: ${data.latitude}, ${data.longitude}`
+      );
+      updateMap(data.latitude, data.longitude);
+      setStatus(
+        `Last update • ${new Date(
+          data.timestamp || Date.now()
+        ).toLocaleTimeString()}`
+      );
+    } else {
+      console.warn("[Pusher] Invalid location data:", data);
+    }
+  });
+}
+
+async function startExperience() {
+  console.log("[App] Starting experience with sessionId:", sessionId);
+
+  // Initialize map early
+  ensureMap();
+  initMapInteractions();
+
+  if (!sessionId) {
+    setStatus(
+      "Missing sessionId. Append ?sessionId=XYZ to the URL shared by the headset."
+    );
+    if (remoteLoading) {
+      remoteLoading.textContent =
+        "Missing sessionId in URL. Ask the SafeWalker to resend the link.";
+    }
+    if (connectBtn) {
+      connectBtn.disabled = true;
+      connectBtn.textContent = "Missing sessionId";
+    }
+    return;
+  }
+
+  if (sessionLabel) {
+    sessionLabel.textContent = sessionId;
+  }
+
+  subscribeToLocations();
+
+  if (connectBtn) {
+    connectBtn.addEventListener("click", () => {
+      if (!joined) {
+        connectBtn.disabled = true;
+        connectBtn.textContent = "Connecting…";
+        joinVideoChannel();
+      }
+    });
+  } else {
+    joinVideoChannel();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", startExperience);
+window.addEventListener("beforeunload", () => {
+  leaveVideoChannel();
 });

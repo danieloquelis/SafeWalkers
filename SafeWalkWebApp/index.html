@@ -23,6 +23,10 @@
           </div>
         </div>
 
+        <button id="connectBtn" class="connect-button">
+          📞 Join Video Call
+        </button>
+
         <div class="local-picture">
           <div class="local-label">You</div>
           <div id="local-player" class="local-video">
@@ -30,9 +34,11 @@
           </div>
         </div>
 
-        <div class="map-overlay">
+        <div class="floor-panel">
           <div id="map" class="map"></div>
-          <button id="navigateBtn" class="cta-button">Take me to them</button>
+          <button id="navigateBtn" class="cta-button" disabled>
+            Take me to them
+          </button>
         </div>
       </div>
 
@@ -51,12 +57,10 @@
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-sA+4J2Czor8zY6GOGa1t9l9a7L2R6VQvM8H+4bPmT50="
       crossorigin=""
     />
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-vEOZm5QdpfQ5sGJZ1b93I7RkGhB7xZ1C7u9qA6lt6nM="
       crossorigin=""
     ></script>
     <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
