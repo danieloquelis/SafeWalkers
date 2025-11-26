@@ -16,8 +16,10 @@ public class ORS_Routing : MonoBehaviour
     public Vector2 startLatLon;
     public Vector2 endLatLon;
     public float offRouteThreshold = 2f; // meters
+    [SerializeField] private bool autoRequestOnStart = true;
+    [SerializeField] private bool snapPlayerOnAutoRoute = true;
 
-    [Header("Visualization")]
+    [Header("Visualization")] 
     public LineRenderer lineRenderer;
 
     [Header("XR Rig")]
@@ -60,16 +62,13 @@ public class ORS_Routing : MonoBehaviour
         if (xrRig == null)
             Debug.LogWarning("XR Rig not assigned. Route will not snap automatically.");
 
-        string loadedKey = ORSConfig.GetApiKey();
-        if (string.IsNullOrEmpty(loadedKey))
-        {
-            Debug.LogError("ORS_Routing: ORS API key could not be loaded. Aborting initial route request.");
+        if (!EnsureOrsApiKey())
             return;
+
+        if (autoRequestOnStart)
+        {
+            BeginRoute(startLatLon, endLatLon, snapPlayerOnAutoRoute);
         }
-
-        orsApiKey = loadedKey;
-
-        StartCoroutine(RequestRoute(startLatLon, endLatLon, snapPlayer: true));
     }
 
     void OnDestroy()
@@ -98,6 +97,30 @@ public class ORS_Routing : MonoBehaviour
 
         if (revealRouteFromPlayer)
             UpdateVisibleRoute(playerPos);
+    }
+
+    public bool BeginRoute(Vector2 start, Vector2 end, bool snapPlayer = false)
+    {
+        if (!EnsureOrsApiKey())
+            return false;
+
+        if (routeRequestInProgress)
+        {
+            Debug.LogWarning("ORS_Routing: Route request already in progress. Ignoring new request.");
+            return false;
+        }
+
+        startLatLon = start;
+        endLatLon = end;
+        routeReady = false;
+        cachedRoute.Clear();
+        if (lineRenderer != null)
+        {
+            lineRenderer.positionCount = 0;
+        }
+
+        StartCoroutine(RequestRoute(startLatLon, endLatLon, snapPlayer));
+        return true;
     }
 
     IEnumerator RequestRoute(Vector2 start, Vector2 end, bool snapPlayer = false)
@@ -293,6 +316,22 @@ public class ORS_Routing : MonoBehaviour
             return cachedRoute[0];
 
         return Vector3.zero;
+    }
+
+    bool EnsureOrsApiKey()
+    {
+        if (!string.IsNullOrEmpty(orsApiKey))
+            return true;
+
+        string loadedKey = ORSConfig.GetApiKey();
+        if (string.IsNullOrEmpty(loadedKey))
+        {
+            Debug.LogError("ORS_Routing: ORS API key could not be loaded.");
+            return false;
+        }
+
+        orsApiKey = loadedKey;
+        return true;
     }
 
     void UpdateVisibleRoute(Vector3 playerPos)
