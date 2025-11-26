@@ -1,6 +1,7 @@
 import * as TaskManager from "expo-task-manager";
 
-import { getSessionId } from "@/utils/storage";
+import { publishLocationUpdate } from "@/utils/pusher";
+import { getPairingId, getSessionId } from "@/utils/storage";
 
 export const LOCATION_TASK_NAME = "safewalk-background-location";
 
@@ -21,34 +22,34 @@ export function ensureBackgroundLocationTask() {
     if (!latest) return;
 
     // Get the current session ID from storage
-    const sessionId = await getSessionId();
+    const [sessionId, pairingId] = await Promise.all([
+      getSessionId(),
+      getPairingId(),
+    ]);
 
-    if (!sessionId) {
-      console.warn("No session ID found - location update skipped");
+    if (!sessionId || !pairingId) {
+      console.warn("Missing session or pairing ID - location update skipped");
       return;
     }
 
     const locationData = {
+      pairingId,
       sessionId,
       latitude: latest.coords.latitude,
       longitude: latest.coords.longitude,
       accuracy: latest.coords.accuracy,
-      timestamp: latest.timestamp,
+      timestamp: latest.timestamp ?? Date.now(),
     };
 
-    console.log("Background location update", locationData);
-
-    // TODO: Send location data to your backend API
-    // Example:
-    // try {
-    //   await fetch('https://your-backend.com/api/location', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(locationData),
-    //   });
-    // } catch (e) {
-    //   console.error('Failed to send location', e);
-    // }
+    try {
+      console.log("Background location update", locationData);
+      await publishLocationUpdate(locationData);
+    } catch (publishError) {
+      console.error(
+        "Failed to publish background location update",
+        publishError
+      );
+    }
   });
 
   taskDefined = true;

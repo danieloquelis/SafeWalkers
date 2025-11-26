@@ -30,7 +30,8 @@ public class ORS_Routing : MonoBehaviour
     [SerializeField, Range(0.05f, 5f)] private float textureAnimationSpeed = 0.8f;
     [SerializeField, Range(0f, 1f)] private float lineAlpha = 0.65f;
     [SerializeField] private Color lineTint = Color.white;
-    [SerializeField, Range(0f, 0.5f)] private float routeHeightOffset = 0.05f;
+    [Tooltip("Vertical offset (meters) applied to every route point. Use negative values to place the path near the floor.")]
+    [SerializeField, Range(-2f, 0.5f)] private float routeHeightOffset = 0.02f;
 
     [Header("Visibility")]
     [SerializeField] private bool revealRouteFromPlayer = true;

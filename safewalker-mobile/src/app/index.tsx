@@ -1,8 +1,9 @@
 import { Pusher } from "@pusher/pusher-websocket-react-native";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -15,14 +16,19 @@ import {
   LOCATION_TASK_NAME,
   ensureBackgroundLocationTask,
 } from "@/background/locationTask";
+import {
+  PUSHER_CLUSTER,
+  PUSHER_KEY,
+  assertPusherConfig,
+} from "@/constants/env";
+import {
+  getPairingChannelName,
+  notifySafeModeLifecycle,
+  publishLocationUpdate,
+} from "@/utils/pusher";
 import { getPairingId, getSessionId, setSessionId } from "@/utils/storage";
 
 type SafeModeState = "idle" | "ready" | "sharing";
-
-const PUSHER_KEY = process.env.EXPO_PUBLIC_PUSHER_KEY ?? "";
-const PUSHER_CLUSTER = process.env.EXPO_PUBLIC_PUSHER_CLUSTER ?? "";
-
-const PAIRING_CHANNEL_PREFIX = "safewalk-mobile-";
 
 export default function SafeWalkScreen() {
   const [pairingId, setPairingId] = useState<string>("");
@@ -30,6 +36,7 @@ export default function SafeWalkScreen() {
   const [sessionId, setSessionIdState] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
 
   // Load persistent pairing ID and session ID on mount
   useEffect(() => {
@@ -42,7 +49,34 @@ export default function SafeWalkScreen() {
     loadStoredData();
   }, []);
 
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
+
   const pulse = useMemo(() => new Animated.Value(1), []);
+
+  useEffect(() => {
+    const requestPermissions = async () => {
+      try {
+        const fg = await Location.requestForegroundPermissionsAsync();
+        if (fg.status !== "granted") {
+          console.warn("Foreground location permission not granted");
+          return;
+        }
+
+        const bg = await Location.requestBackgroundPermissionsAsync();
+        if (bg.status !== "granted") {
+          console.warn("Background location permission not granted");
+        }
+      } catch (permError) {
+        console.error("Failed to request location permissions", permError);
+      }
+    };
+
+    if (Platform.OS === "android") {
+      requestPermissions();
+    }
+  }, []);
 
   useEffect(() => {
     if (safeModeState === "sharing") {
@@ -73,16 +107,20 @@ export default function SafeWalkScreen() {
       return;
     }
 
-    if (!PUSHER_KEY || !PUSHER_CLUSTER) {
+    try {
+      assertPusherConfig();
+    } catch (configError) {
       setError(
-        "Missing Pusher configuration. Set EXPO_PUBLIC_PUSHER_KEY and EXPO_PUBLIC_PUSHER_CLUSTER."
+        configError instanceof Error
+          ? configError.message
+          : "Missing Pusher configuration."
       );
       setConnecting(false);
       return;
     }
 
     const pusher = Pusher.getInstance();
-    const channelName = `${PAIRING_CHANNEL_PREFIX}${pairingId}`;
+    const channelName = getPairingChannelName(pairingId);
 
     const init = async () => {
       try {
@@ -92,7 +130,7 @@ export default function SafeWalkScreen() {
           onConnectionStateChange: (currentState: string) => {
             console.log(`Pusher connection state: ${currentState}`);
           },
-          onError: (message: string, code: number, e: any) => {
+          onError: (message: string, code: Number, e: any) => {
             console.error("Pusher error", message, code, e);
             setError("Connection issue. Waiting to reconnect...");
           },
@@ -115,14 +153,29 @@ export default function SafeWalkScreen() {
                 setError("Unable to start background location updates.");
                 setSafeModeState("ready");
               });
+
+              if (incomingSessionId) {
+                sendImmediateLocationUpdate(pairingId, incomingSessionId);
+                sendSafeModeAck(
+                  pairingId,
+                  "mobile_safe_mode_ready",
+                  incomingSessionId
+                );
+              }
             } else if (event.eventName === "safe_mode_disabled") {
               setSafeModeState("ready");
+              const previousSessionId = sessionIdRef.current ?? undefined;
               setSessionIdState(null);
               setSessionId(null); // Clear from storage
               Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME).catch(
                 (e) => {
                   console.warn("Failed to stop background location", e);
                 }
+              );
+              sendSafeModeAck(
+                pairingId,
+                "mobile_safe_mode_disabled",
+                previousSessionId
               );
             }
           },
@@ -274,6 +327,41 @@ async function startBackgroundLocation() {
     pausesUpdatesAutomatically: false, // Keep running even when stationary
   });
   console.log("Background location tracking started");
+}
+
+function sendImmediateLocationUpdate(pairingId: string, sessionId: string) {
+  if (!pairingId || !sessionId) return;
+
+  Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.High,
+  })
+    .then((position) =>
+      publishLocationUpdate({
+        pairingId,
+        sessionId,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: position.timestamp ?? Date.now(),
+      })
+    )
+    .catch((error) => {
+      console.warn("Failed to send immediate location update", error);
+    });
+}
+
+function sendSafeModeAck(
+  pairingId: string,
+  eventName: string,
+  sessionId?: string
+) {
+  if (!pairingId) return;
+
+  notifySafeModeLifecycle(pairingId, eventName, {
+    sessionId,
+  }).catch((error) => {
+    console.warn(`Failed to notify ${eventName}`, error);
+  });
 }
 
 const styles = StyleSheet.create({

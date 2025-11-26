@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -22,6 +23,7 @@ public class MainController : MonoBehaviour
     [Header("Player Pref Keys")]
     [SerializeField] private string mainEmergencyContactKey = "MainEmergencyContactNumber";
     [SerializeField] private string emergencyGestureKey = "EmergencyGesture";
+    [SerializeField] private string pairingIdPrefsKey = SafeWalkPairingController.DefaultPairingPrefsKey;
 
     [Header("Gesture Detection")]
     [Tooltip("PlayerPrefs key used by GestureDropDown to store the selected gesture index.")]
@@ -182,6 +184,45 @@ public class MainController : MonoBehaviour
         if (current.IsValid())
         {
             SceneManager.LoadScene(current.buildIndex);
+        }
+    }
+
+    [Serializable]
+    private class PairingPayload
+    {
+        public string pairingId;
+    }
+
+    /// <summary>
+    /// Persists the pairing id extracted from the QR payload so the pairing controller
+    /// can pick it up on the next Awake.
+    /// </summary>
+    /// <param name="payload">Raw JSON payload read from the QR code.</param>
+    public void StorePairingPayload(string payload)
+    {
+        if (string.IsNullOrWhiteSpace(payload))
+        {
+            Debug.LogWarning("[MainController] Received empty QR payload.");
+            return;
+        }
+
+        try
+        {
+            var parsed = JsonUtility.FromJson<PairingPayload>(payload);
+            if (parsed == null || string.IsNullOrWhiteSpace(parsed.pairingId))
+            {
+                Debug.LogWarning($"[MainController] QR payload did not contain a pairingId. Raw={payload}");
+                return;
+            }
+
+            string sanitized = parsed.pairingId.Trim();
+            PlayerPrefs.SetString(pairingIdPrefsKey, sanitized);
+            PlayerPrefs.Save();
+            Debug.Log($"[MainController] Stored pairing id '{sanitized}' into PlayerPrefs key '{pairingIdPrefsKey}'.");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[MainController] Failed to parse QR payload: {ex}");
         }
     }
 }

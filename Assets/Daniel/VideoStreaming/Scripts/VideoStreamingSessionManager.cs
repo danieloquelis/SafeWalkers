@@ -34,6 +34,10 @@ public class VideoStreamingSessionManager : MonoBehaviour
     [Tooltip("If true, a session will be created automatically in Awake().")]
     [SerializeField] private bool autoStartOnAwake;
 
+    [Header("Safe Walk Handshake")]
+    [Tooltip("Controller responsible for pairing with the Android app and sending Pusher events.")]
+    [SerializeField] private SafeWalkPairingController pairingController;
+
     /// <summary>Last generated session id (also used as the Agora channel name).</summary>
     public string CurrentSessionId { get; private set; }
 
@@ -98,6 +102,35 @@ public class VideoStreamingSessionManager : MonoBehaviour
         {
             Debug.LogWarning("[VideoStreamingSessionManager] No EmergencyContactController assigned, SMS notification will be skipped.");
         }
+
+        if (pairingController != null)
+        {
+            pairingController.NotifySafeModeEnabled(CurrentSessionId, url);
+        }
+        else
+        {
+            Debug.LogWarning("[VideoStreamingSessionManager] No SafeWalkPairingController assigned, mobile app will not be notified.");
+        }
+    }
+
+    /// <summary>
+    /// Stops the active session, leaves Agora and notifies the phone that Safe Mode ended.
+    /// </summary>
+    public void StopVideoStreamingSession()
+    {
+        if (string.IsNullOrEmpty(CurrentSessionId))
+        {
+            Debug.LogWarning("[VideoStreamingSessionManager] Stop requested but no active session id.");
+            return;
+        }
+
+        if (agoraController != null)
+        {
+            agoraController.LeaveAndCleanup();
+        }
+
+        pairingController?.NotifySafeModeDisabled(CurrentSessionId);
+        CurrentSessionId = null;
     }
 
     /// <summary>

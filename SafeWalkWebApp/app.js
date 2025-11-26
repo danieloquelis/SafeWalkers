@@ -1,3 +1,234 @@
+const AGORA_APP_ID = "7dfebc6ae4c64cf0b067d3d436b7fb44";
+const AGORA_TOKEN = null;
+const PUSHER_KEY = "c7915488e6204cc07cf0";
+const PUSHER_CLUSTER = "eu";
+const SESSION_CHANNEL_PREFIX = "safewalk-session-";
+const LOCATION_EVENT = "mobile_location_update";
+const MAP_ZOOM = 15;
+
+const sessionLabel = document.getElementById("sessionLabel");
+const pusherStatus = document.getElementById("pusherStatus");
+const remoteLoading = document.getElementById("remoteLoading");
+const navigateBtn = document.getElementById("navigateBtn");
+const urlParams = new URLSearchParams(window.location.search);
+const sessionId = (urlParams.get("sessionId") || "").trim();
+
+let agoraClient;
+let localAudioTrack;
+let localVideoTrack;
+let joined = false;
+
+let pusher;
+let locationChannel;
+
+let mapInstance;
+let userMarker;
+let lastCoords = null;
+
+function setStatus(message) {
+  if (pusherStatus) {
+    pusherStatus.textContent = message;
+  }
+}
+
+function ensureMap() {
+  if (mapInstance || !window.L) return;
+
+  mapInstance = L.map("map", {
+    zoomControl: false,
+    attributionControl: false,
+    closePopupOnClick: false,
+    dragging: true,
+  }).setView([0, 0], MAP_ZOOM);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+  }).addTo(mapInstance);
+}
+
+function updateMap(lat, lng) {
+  ensureMap();
+  if (!mapInstance) return;
+
+  const coords = [lat, lng];
+  if (!userMarker) {
+    userMarker = L.circleMarker(coords, {
+      radius: 7,
+      weight: 2,
+      color: "#34d399",
+      fillColor: "#10b981",
+      fillOpacity: 0.85,
+    }).addTo(mapInstance);
+  } else {
+    userMarker.setLatLng(coords);
+  }
+
+  if (!lastCoords) {
+    mapInstance.setView(coords, MAP_ZOOM);
+  } else {
+    mapInstance.panTo(coords, { animate: true, duration: 0.6 });
+  }
+
+  lastCoords = coords;
+  if (navigateBtn) {
+    navigateBtn.disabled = false;
+  }
+}
+
+function initMapInteractions() {
+  ensureMap();
+
+  if (navigateBtn) {
+    navigateBtn.addEventListener("click", () => {
+      if (!lastCoords) return;
+      const [lat, lng] = lastCoords;
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
+        "_blank",
+        "noopener"
+      );
+    });
+    navigateBtn.disabled = true;
+  }
+}
+
+async function initAgora() {
+  if (agoraClient) return agoraClient;
+  if (!window.AgoraRTC) {
+    setStatus("Video SDK missing. Refresh the page.");
+    return null;
+  }
+
+  agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+  agoraClient.on("user-published", async (user, mediaType) => {
+    await agoraClient.subscribe(user, mediaType);
+
+    if (mediaType === "video") {
+      const remotePlayer = document.getElementById("remote-player");
+      if (remotePlayer) {
+        remotePlayer.innerHTML = "";
+        user.videoTrack.play("remote-player");
+        if (remoteLoading) remoteLoading.style.display = "none";
+      }
+    }
+
+    if (mediaType === "audio") {
+      user.audioTrack.play();
+    }
+  });
+
+  agoraClient.on("user-unpublished", () => {
+    if (remoteLoading) remoteLoading.style.display = "flex";
+  });
+
+  agoraClient.on("user-left", () => {
+    if (remoteLoading) {
+      remoteLoading.style.display = "flex";
+      remoteLoading.textContent = "SafeWalker disconnected";
+    }
+  });
+
+  return agoraClient;
+}
+
+async function joinVideoChannel() {
+  if (joined || !sessionId) return;
+
+  const client = await initAgora();
+  if (!client) return;
+
+  try {
+    [localAudioTrack, localVideoTrack] =
+      await AgoraRTC.createMicrophoneAndCameraTracks();
+
+    await client.join(AGORA_APP_ID, sessionId, AGORA_TOKEN, null);
+
+    const localPlayer = document.getElementById("local-player");
+    if (localPlayer) {
+      localPlayer.innerHTML = "";
+      localVideoTrack.play("local-player");
+    }
+
+    await client.publish([localAudioTrack, localVideoTrack]);
+    joined = true;
+  } catch (err) {
+    console.error("Failed to join Agora channel", err);
+    setStatus("Camera access denied. Please allow permissions and reload.");
+  }
+}
+
+function initPusher() {
+  if (pusher || !window.Pusher) return;
+
+  Pusher.logToConsole = false;
+  pusher = new Pusher(PUSHER_KEY, {
+    cluster: PUSHER_CLUSTER,
+    forceTLS: true,
+  });
+
+  pusher.connection.bind("state_change", (state) => {
+    setStatus(`Location stream: ${state.current}`);
+  });
+
+  pusher.connection.bind("error", (err) => {
+    console.error("Pusher error", err);
+    setStatus("Location stream error. Retrying…");
+  });
+}
+
+function subscribeToLocations() {
+  if (!sessionId) return;
+  initPusher();
+  if (!pusher) return;
+
+  if (locationChannel) {
+    pusher.unsubscribe(locationChannel.name);
+  }
+
+  const channelName = SESSION_CHANNEL_PREFIX + sessionId;
+  locationChannel = pusher.subscribe(channelName);
+
+  locationChannel.bind("pusher:subscription_succeeded", () => {
+    setStatus("Connected to live location feed");
+  });
+
+  locationChannel.bind(LOCATION_EVENT, (payload) => {
+    const data =
+      typeof payload === "string" ? JSON.parse(payload) : payload || {};
+    if (
+      typeof data.latitude === "number" &&
+      typeof data.longitude === "number"
+    ) {
+      updateMap(data.latitude, data.longitude);
+      setStatus(
+        `Last update • ${new Date(
+          data.timestamp || Date.now()
+        ).toLocaleTimeString()}`
+      );
+    }
+  });
+}
+
+async function startExperience() {
+  initMapInteractions();
+
+  if (!sessionId) {
+    setStatus(
+      "Missing sessionId. Append ?sessionId=XYZ to the URL shared by the headset."
+    );
+    return;
+  }
+
+  if (sessionLabel) {
+    sessionLabel.textContent = sessionId;
+  }
+
+  await joinVideoChannel();
+  subscribeToLocations();
+}
+
+document.addEventListener("DOMContentLoaded", startExperience);
 // SafeWalkers web client
 // Uses Agora Web SDK (via CDN) to join the same channel as the Unity headset.
 

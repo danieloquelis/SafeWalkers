@@ -1,5 +1,12 @@
 import { ExpoConfig } from "expo/config";
 
+const pusherEnv = {
+  appId: process.env.EXPO_PUBLIC_PUSHER_APP_ID ?? "",
+  key: process.env.EXPO_PUBLIC_PUSHER_KEY ?? "",
+  secret: process.env.EXPO_PUBLIC_PUSHER_SECRET ?? "",
+  cluster: process.env.EXPO_PUBLIC_PUSHER_CLUSTER ?? "",
+};
+
 const config: ExpoConfig = {
   name: "safewalker-mobile",
   slug: "safewalker-mobile",
@@ -30,6 +37,7 @@ const config: ExpoConfig = {
       "ACCESS_BACKGROUND_LOCATION",
       "INTERNET",
       "FOREGROUND_SERVICE",
+      "FOREGROUND_SERVICE_LOCATION",
     ],
   },
   plugins: [
@@ -49,6 +57,9 @@ const config: ExpoConfig = {
     typedRoutes: true,
     reactCompiler: true,
     tsconfigPaths: true,
+  },
+  extra: {
+    pusher: pusherEnv,
   },
 };
 
