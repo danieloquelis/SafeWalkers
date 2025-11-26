@@ -15,63 +15,55 @@
   </head>
 
   <body>
-    <div class="app">
-      <header class="app-header">
-        <h1>SafeWalkers Live</h1>
-        <p class="subtitle">Secure emergency video powered by Agora</p>
-      </header>
-
-      <main class="app-main">
-        <section class="session-info">
-          <div class="session-row">
-            <label for="sessionIdInput">Session ID</label>
-            <input id="sessionIdInput" type="text" readonly />
+    <div class="experience">
+      <div class="video-stage">
+        <div id="remote-player" class="video-surface">
+          <div class="video-loading" id="remoteLoading">
+            Connecting to SafeWalker video…
           </div>
-          <p class="session-hint">
-            This session ID comes from your SafeWalkers headset. Keep this page
-            open during the call.
-          </p>
-        </section>
+        </div>
 
-        <section class="video-grid">
-          <div class="video-card">
-            <h2>You</h2>
-            <div id="local-player" class="video-player video-local">
-              <div class="video-placeholder">Your camera preview</div>
-            </div>
+        <button id="connectBtn" class="connect-button">
+          📞 Join Video Call
+        </button>
+
+        <div class="local-picture">
+          <div class="local-label">You</div>
+          <div id="local-player" class="local-video">
+            <div class="video-loading">Camera preview</div>
           </div>
+        </div>
 
-          <div class="video-card">
-            <h2>SafeWalker</h2>
-            <div id="remote-player" class="video-player video-remote">
-              <div class="video-placeholder">Waiting for remote video…</div>
-            </div>
-          </div>
-        </section>
+        <div class="floor-panel">
+          <div id="map" class="map"></div>
+          <button id="navigateBtn" class="cta-button" disabled>
+            Take me to them
+          </button>
+        </div>
+      </div>
 
-        <section class="controls">
-          <button id="joinBtn" class="btn primary">Join Call</button>
-          <button id="leaveBtn" class="btn secondary" disabled>Leave</button>
-        </section>
-
-        <section class="permissions-note">
-          <p>
-            When you tap <strong>Join Call</strong>, we will ask for access to
-            your camera and microphone so you can talk with the SafeWalkers
-            headset in real time.
-          </p>
-        </section>
-      </main>
-
-      <footer class="app-footer">
-        <small
-          >&copy; <span id="year"></span> SafeWalkers &mdash; Video by
-          Agora.io</small
-        >
-      </footer>
+      <div class="status-hud">
+        <div class="session-chip">
+          <span class="label">Session</span>
+          <span id="sessionLabel">–</span>
+        </div>
+        <div id="pusherStatus" class="pusher-status">
+          Waiting for location updates…
+        </div>
+      </div>
     </div>
 
-    <!-- Agora Web SDK (CDN) -->
+    <!-- External SDKs -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      crossorigin=""
+    ></script>
+    <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
     <script src="./app.js"></script>
   </body>

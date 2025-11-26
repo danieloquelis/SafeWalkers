@@ -101,3 +101,6 @@ Assets/Resources/ors_api_key.txt.meta
 
 # Local ONNX Runtime Android bundle (kept out of git; headers/libs are copied into SpeechEmbeddingPlugin/include and libs)
 /SpeechEmbeddingPlugin/ONNX_Runtime_Android_1.23.2/
+# SafeWalk pusher credentials asset (created locally per developer)
+Assets/Resources/SafeWalkPusherSettings.asset
+Assets/Resources/SafeWalkPusherSettings.asset.meta
