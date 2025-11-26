@@ -12,8 +12,8 @@ EditorBuildSettings:
     path: Assets/Main/MainScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
-    path: Assets/Maria/MapScene.unity
-    guid: 9323284570242439f9d7ef7874011c41
+    path: Assets/Daniel/GPSPairing/GPSPairingScene.unity
+    guid: 4b43b72840453443588d489895d99f3e
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: f17a5ecd4ec004698aadd0dd95f7b7fd, type: 2}
