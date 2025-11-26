@@ -12088,7 +12088,7 @@ MonoBehaviour:
   safePlaceService: {fileID: 913330158}
   orsRouting: {fileID: 1378294537}
   safetyProfile: 1
-  snapPlayerToRoute: 0
+  snapPlayerToRoute: 1
 --- !u!114 &913330158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17864,7 +17864,7 @@ MonoBehaviour:
   endLatLon: {x: 52.44978, y: 13.334143}
   offRouteThreshold: 10
   autoRequestOnStart: 0
-  snapPlayerOnAutoRoute: 0
+  snapPlayerOnAutoRoute: 1
   lineRenderer: {fileID: 1378294538}
   xrRig: {fileID: 1661167393}
   flowLineMaterial: {fileID: 2100000, guid: 5434f3e60d0fb41c387164ab47e52c8b, type: 2}
@@ -19625,7 +19625,7 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
-          m_BoolArgument: 0
+          m_BoolArgument: 1
         m_CallState: 2
       - m_Target: {fileID: 216224540}
         m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
