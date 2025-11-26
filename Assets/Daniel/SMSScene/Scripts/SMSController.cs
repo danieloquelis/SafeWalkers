@@ -49,5 +49,11 @@ public class SMSController : MonoBehaviour
 			}
 		);
 	}
+
+	// Public method with callback for tracking completion
+	public void SendMessage(System.Action<bool, string> onComplete)
+	{
+		TwilioClient.Instance.SendMessage(toNumber, message, onComplete);
+	}
 }
 

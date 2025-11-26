@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 
 // NOTE:
 // This script assumes that the Agora Unity Video SDK is imported into the project.
@@ -37,6 +38,29 @@ public class AgoraUnityVideoController : MonoBehaviour
     [Tooltip("Surface where the remote video will be rendered (e.g., a RawImage or Quad).")]
     [SerializeField] private GameObject remoteVideoSurface;
 
+    [Header("Events")]
+    [Tooltip("Invoked when the local user successfully joins the Agora channel.")]
+    public UnityEvent OnLocalJoinedChannel;
+
+    [Tooltip("Invoked when a remote user joins the channel (video call established).")]
+    public UnityEvent<uint> OnRemoteUserJoined;
+
+    [Tooltip("Invoked when the local user leaves the Agora channel.")]
+    public UnityEvent OnLocalLeftChannel;
+
+    [Tooltip("Invoked when a remote user leaves the channel or goes offline (call ended).")]
+    public UnityEvent<uint> OnRemoteUserLeft;
+
+    [Tooltip("Invoked when an Agora error occurs. Parameters: error code, error message.")]
+    public UnityEvent<int, string> OnAgoraError;
+
+    [Header("Simplified Call State Events")]
+    [Tooltip("Invoked when the video call becomes active (first remote user joins).")]
+    public UnityEvent OnVideoCallEstablished;
+
+    [Tooltip("Invoked when the video call ends (all remote users leave or local user leaves).")]
+    public UnityEvent OnVideoCallEnded;
+
 #if AGORA_RTC_SDK
     [Header("Passthrough Camera (PCA)")]
     [Tooltip("Meta PassthroughCameraAccess component that provides the Quest headset camera frames.")]
@@ -54,6 +78,12 @@ public class AgoraUnityVideoController : MonoBehaviour
 
     /// <summary>Current Agora channel name.</summary>
     public string CurrentChannelName { get; private set; }
+
+    /// <summary>True if currently in a channel with at least one remote user.</summary>
+    public bool IsInActiveCall { get; private set; }
+
+    /// <summary>Number of remote users currently in the channel.</summary>
+    public int RemoteUserCount { get; private set; }
 
     // Backing Agora engine instance (from current Agora Unity SDK)
 #if AGORA_RTC_SDK
@@ -289,6 +319,11 @@ public class AgoraUnityVideoController : MonoBehaviour
             _rtcEngine = null;
             _initialized = false;
         }
+
+        // Reset call state (OnLeaveChannel event handler will handle events)
+        RemoteUserCount = 0;
+        IsInActiveCall = false;
+        CurrentChannelName = null;
 #endif
     }
 
@@ -346,24 +381,75 @@ public class AgoraUnityVideoController : MonoBehaviour
             _controller = controller;
         }
 
+        public override void OnError(int err, string msg)
+        {
+            Debug.LogError($"[AgoraUnityVideoController] Agora Error {err}: {msg}");
+            _controller.OnAgoraError?.Invoke(err, msg);
+        }
+
         public override void OnJoinChannelSuccess(RtcConnection connection, int elapsed)
         {
             Debug.Log($"[AgoraUnityVideoController] Joined channel '{connection.channelId}' with uid {connection.localUid}, elapsed={elapsed}ms");
+            _controller.OnLocalJoinedChannel?.Invoke();
         }
 
         public override void OnUserJoined(RtcConnection connection, uint uid, int elapsed)
         {
             Debug.Log($"[AgoraUnityVideoController] Remote user joined, uid={uid}, elapsed={elapsed}ms");
 
+            _controller.RemoteUserCount++;
+            bool wasInactive = !_controller.IsInActiveCall;
+            _controller.IsInActiveCall = true;
+
             if (_controller.remoteVideoSurface != null)
             {
                 _controller.TryAttachRemoteVideoSurface(_controller.remoteVideoSurface, uid, connection.channelId);
+            }
+
+            _controller.OnRemoteUserJoined?.Invoke(uid);
+
+            // Fire the simplified event only when the first user joins (call becomes active)
+            if (wasInactive)
+            {
+                Debug.Log($"[AgoraUnityVideoController] Video call established!");
+                _controller.OnVideoCallEstablished?.Invoke();
             }
         }
 
         public override void OnUserOffline(RtcConnection connection, uint uid, USER_OFFLINE_REASON_TYPE reason)
         {
             Debug.Log($"[AgoraUnityVideoController] Remote user left, uid={uid}, reason={reason}");
+
+            _controller.RemoteUserCount = Mathf.Max(0, _controller.RemoteUserCount - 1);
+            bool wasActive = _controller.IsInActiveCall;
+            _controller.IsInActiveCall = _controller.RemoteUserCount > 0;
+
+            _controller.OnRemoteUserLeft?.Invoke(uid);
+
+            // Fire the simplified event only when the last user leaves (call becomes inactive)
+            if (wasActive && !_controller.IsInActiveCall)
+            {
+                Debug.Log($"[AgoraUnityVideoController] Video call ended (no remote users).");
+                _controller.OnVideoCallEnded?.Invoke();
+            }
+        }
+
+        public override void OnLeaveChannel(RtcConnection connection, RtcStats stats)
+        {
+            Debug.Log($"[AgoraUnityVideoController] Left channel '{connection.channelId}'");
+
+            bool wasActive = _controller.IsInActiveCall;
+            _controller.RemoteUserCount = 0;
+            _controller.IsInActiveCall = false;
+
+            _controller.OnLocalLeftChannel?.Invoke();
+
+            // Fire the call ended event if we were in an active call
+            if (wasActive)
+            {
+                Debug.Log($"[AgoraUnityVideoController] Video call ended (local user left).");
+                _controller.OnVideoCallEnded?.Invoke();
+            }
         }
     }
 

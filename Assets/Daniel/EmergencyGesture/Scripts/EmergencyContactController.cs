@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -29,8 +30,15 @@ public class EmergencyContactController : MonoBehaviour
 	[SerializeField] private SMSController smsControllerPrefab;
 
 	[Header("Events")]
-	[Tooltip("Invoked after the emergency contacts have been notified (SMS send triggered).")]
+	[Tooltip("Invoked after at least one emergency contact has been successfully notified (SMS sent successfully).")]
 	public UnityEvent OnContacted;
+
+	[Tooltip("Invoked if no emergency contacts respond or all SMS sends fail within the timeout period.")]
+	public UnityEvent OnContactNotReached;
+
+	[Header("Timeout Settings")]
+	[Tooltip("Maximum time in seconds to wait for SMS sends to complete before triggering OnContactNotReached.")]
+	[SerializeField] private float responseTimeoutSeconds = 10f;
 
 	private readonly List<string> _activeContacts = new List<string>();
 	private bool _hasStarted;
@@ -87,8 +95,21 @@ public class EmergencyContactController : MonoBehaviour
 		_hasStarted = true;
 
 		string finalMessage = ComposeMessage(overrideMessage, videoUrl, imageBase64, position);
+		StartCoroutine(SendEmergencyMessagesCoroutine(finalMessage));
+	}
 
-		foreach (string number in _activeContacts)
+	/// <summary>
+	/// Coroutine that sends SMS to all emergency contacts and waits for responses.
+	/// Triggers OnContacted if at least one succeeds, or OnContactNotReached on timeout/failure.
+	/// </summary>
+	private IEnumerator SendEmergencyMessagesCoroutine(string finalMessage)
+	{
+		var pendingContacts = new List<string>(_activeContacts);
+		var completedContacts = new Dictionary<string, bool>(); // number -> success
+		var smsInstances = new List<SMSController>();
+
+		// Send to all contacts
+		foreach (string number in pendingContacts)
 		{
 			if (string.IsNullOrWhiteSpace(number))
 				continue;
@@ -96,13 +117,76 @@ public class EmergencyContactController : MonoBehaviour
 			SMSController instance = Instantiate(smsControllerPrefab, transform);
 			instance.toNumber = number;
 			instance.message = finalMessage;
-			instance.SendMessage();
+			smsInstances.Add(instance);
 
-			// Clean up after a short delay once the SMS has had time to send.
-			Destroy(instance.gameObject, 10f);
+			// Send with callback to track completion
+			instance.SendMessage((success, response) =>
+			{
+				completedContacts[number] = success;
+				if (success)
+				{
+					Debug.Log($"[EmergencyContactController] SMS sent successfully to {number}");
+				}
+				else
+				{
+					Debug.LogWarning($"[EmergencyContactController] SMS failed to {number}: {response}");
+				}
+			});
 		}
 
-		OnContacted?.Invoke();
+		// Wait for all SMS to complete or timeout
+		float elapsedTime = 0f;
+		bool anySuccess = false;
+		
+		while (elapsedTime < responseTimeoutSeconds)
+		{
+			// Check if all contacts have responded
+			if (completedContacts.Count >= pendingContacts.Count)
+			{
+				break;
+			}
+
+			yield return null;
+			elapsedTime += Time.deltaTime;
+		}
+
+		// Check results
+		foreach (var kvp in completedContacts)
+		{
+			if (kvp.Value)
+			{
+				anySuccess = true;
+				break;
+			}
+		}
+
+		// Trigger appropriate events
+		if (anySuccess)
+		{
+			Debug.Log($"[EmergencyContactController] At least one contact was successfully notified ({completedContacts.Count}/{pendingContacts.Count} responded).");
+			OnContacted?.Invoke();
+		}
+		else
+		{
+			if (completedContacts.Count < pendingContacts.Count)
+			{
+				Debug.LogWarning($"[EmergencyContactController] Timeout reached. Only {completedContacts.Count}/{pendingContacts.Count} contacts responded.");
+			}
+			else
+			{
+				Debug.LogWarning($"[EmergencyContactController] All SMS sends failed ({completedContacts.Count} contacts).");
+			}
+			OnContactNotReached?.Invoke();
+		}
+
+		// Clean up SMS controller instances
+		foreach (var instance in smsInstances)
+		{
+			if (instance != null)
+			{
+				Destroy(instance.gameObject);
+			}
+		}
 	}
 
 	/// <summary>

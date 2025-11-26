@@ -418,6 +418,11 @@ PrefabInstance:
       propertyPath: config
       value: 
       objectReference: {fileID: 11400000, guid: d90b19e40c37845c6896cec2d64a5e73, type: 2}
+    - target: {fileID: 402747159836216905, guid: 606625c8142b144769a5318edc6efd89, type: 3}
+      propertyPath: systemPrompt
+      value: You are a helpful assistant who answers briefly. You start the conversation
+        with a greet.
+      objectReference: {fileID: 0}
     - target: {fileID: 7637585925344815295, guid: 606625c8142b144769a5318edc6efd89, type: 3}
       propertyPath: m_Name
       value: RealtimeConversationManager
