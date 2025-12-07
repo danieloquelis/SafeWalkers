@@ -8,8 +8,8 @@ const pusherEnv = {
 };
 
 const config: ExpoConfig = {
-  name: "safewalker-mobile",
-  slug: "safewalker-mobile",
+  name: "SafeWalk",
+  slug: "SafeWalk",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
@@ -18,17 +18,11 @@ const config: ExpoConfig = {
   newArchEnabled: true,
   platforms: ["ios", "android"],
   ios: {
-    bundleIdentifier: "com.safewalkers",
+    bundleIdentifier: "com.safewalk",
     supportsTablet: true,
   },
   android: {
-    package: "com.safewalkers",
-    adaptiveIcon: {
-      backgroundColor: "#E6F4FE",
-      foregroundImage: "./assets/images/android-icon-foreground.png",
-      backgroundImage: "./assets/images/android-icon-background.png",
-      monochromeImage: "./assets/images/android-icon-monochrome.png",
-    },
+    package: "com.safewalk",
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     permissions: [
@@ -46,7 +40,7 @@ const config: ExpoConfig = {
     [
       "expo-splash-screen",
       {
-        image: "./assets/images/splash-icon.png",
+        image: "./assets/images/splash.png",
         imageWidth: 200,
         resizeMode: "contain",
         backgroundColor: "#ffffff",
@@ -60,6 +54,9 @@ const config: ExpoConfig = {
   },
   extra: {
     pusher: pusherEnv,
+    eas: {
+      projectId: "a7cf91f8-49b8-41c3-880c-6c8c69928e53",
+    },
   },
 };
 
