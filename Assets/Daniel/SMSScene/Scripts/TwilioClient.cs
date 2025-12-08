@@ -12,6 +12,7 @@ public sealed class TwilioClient
 	private string _accountSid;
 	private const string FromPhoneNumber = "+12394755462";
     private string _authToken;
+	private string _messagingServiceSid;
 
     private readonly MonoBehaviour _coroutineRunner;
 
@@ -51,6 +52,18 @@ public sealed class TwilioClient
 		{
 			_accountSid = sidAsset.text.Trim();
 		}
+
+		// Loads from Assets/Resources/twilio_sms_service_sid.txt (do not include extension)
+		var messagingServiceSidAsset = Resources.Load<TextAsset>("twilio_sms_service_sid");
+		if (messagingServiceSidAsset == null || string.IsNullOrWhiteSpace(messagingServiceSidAsset.text))
+		{
+			Debug.LogError("Twilio SMS Service SID not found. Create Assets/Resources/twilio_sms_service_sid.txt and add your SMS Service SID.");
+			_messagingServiceSid = null;
+		}
+		else
+		{
+			_messagingServiceSid = messagingServiceSidAsset.text.Trim();
+		}
     }
 
 	public void SendMessage(
@@ -87,7 +100,7 @@ public sealed class TwilioClient
         var form = new WWWForm();
         form.AddField("To", toPhoneNumber);
         form.AddField("Body", messageBody);
-		form.AddField("From", FromPhoneNumber);
+		form.AddField("MessagingServiceSid", _messagingServiceSid);
 
         using (var request = UnityWebRequest.Post(url, form))
         {
