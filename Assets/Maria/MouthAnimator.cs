@@ -5,7 +5,10 @@ using UnityEngine;
 public class MouthAnimator : MonoBehaviour
 {
     [Header("Audio Input")]
+    [Tooltip("Static AudioClip: Pre-processes entire clip. Leave empty for real-time mode.")]
     public AudioClip audioClip;
+
+    [Tooltip("AudioSource: For static mode (plays audioClip) or real-time mode (monitors external audio).")]
     public AudioSource audioSource;
 
     [Tooltip("When ON: audio plays and mouth animates. When OFF: audio stops and mouth closes.")]
@@ -24,10 +27,16 @@ public class MouthAnimator : MonoBehaviour
     public int smoothingWindow = 3;
     public float responseCurveExponent = 0.8f;
 
+    [Header("Real-time Mode Settings")]
+    [Tooltip("Sample count for GetOutputData() in real-time mode (higher = smoother but more processing)")]
+    public int realTimeSampleCount = 1024;
+
+    private enum LipsyncMode { Static, RealTime }
     private Queue<float> amplitudeHistory = new Queue<float>();
     private float currentNormalizedAmplitude = 0f;
     private float displayedAmplitude = 0f;
     private Coroutine lipsyncRoutine;
+    private LipsyncMode currentMode = LipsyncMode.Static;
 
     void Start()
     {
@@ -61,20 +70,36 @@ public class MouthAnimator : MonoBehaviour
 
     private void ApplyLipsyncToggle()
     {
+        // Determine mode based on configuration
+        DetermineMode();
+
         // If enabled and not running → start everything
         if (lipsyncEnabled)
         {
-            if (!audioSource.isPlaying)
-                audioSource.Play();
+            if (currentMode == LipsyncMode.Static)
+            {
+                // Static mode: control AudioSource playback and use pre-processed clip
+                if (!audioSource.isPlaying)
+                    audioSource.Play();
 
-            if (lipsyncRoutine == null && audioClip != null)
-                lipsyncRoutine = StartCoroutine(AnimateMouthFromAudio(audioClip));
+                if (lipsyncRoutine == null && audioClip != null)
+                    lipsyncRoutine = StartCoroutine(AnimateMouthFromAudio(audioClip));
+            }
+            else if (currentMode == LipsyncMode.RealTime)
+            {
+                // Real-time mode: monitor external AudioSource, don't control playback
+                if (lipsyncRoutine == null)
+                    lipsyncRoutine = StartCoroutine(AnimateMouthFromAudioSource());
+            }
         }
         else
         {
-            // Disable lipsync and stop audio
-            if (audioSource.isPlaying)
+            // Disable lipsync
+            if (currentMode == LipsyncMode.Static && audioSource.isPlaying)
+            {
+                // Only stop audio in static mode (we control it)
                 audioSource.Stop();
+            }
 
             if (lipsyncRoutine != null)
             {
@@ -84,6 +109,24 @@ public class MouthAnimator : MonoBehaviour
 
             currentNormalizedAmplitude = 0f;
             UpdateMouthSprite(0f); // closed mouth
+        }
+    }
+
+    private void DetermineMode()
+    {
+        // Static mode: AudioClip is assigned (original behavior)
+        // Real-time mode: No AudioClip, but AudioSource exists (monitor external audio)
+        if (audioClip != null)
+        {
+            currentMode = LipsyncMode.Static;
+        }
+        else if (audioSource != null)
+        {
+            currentMode = LipsyncMode.RealTime;
+        }
+        else
+        {
+            currentMode = LipsyncMode.Static; // fallback
         }
     }
 
@@ -140,6 +183,66 @@ public class MouthAnimator : MonoBehaviour
         }
 
         // When clip ends
+        currentNormalizedAmplitude = 0f;
+        lipsyncRoutine = null;
+    }
+
+    /// <summary>
+    /// Real-time mode: Continuously monitors the AudioSource and calculates amplitude on-the-fly.
+    /// Works with streaming audio (e.g., PcmAudioPlayer swapping clips dynamically).
+    /// </summary>
+    IEnumerator AnimateMouthFromAudioSource()
+    {
+        float[] outputSamples = new float[realTimeSampleCount];
+        amplitudeHistory.Clear();
+        float peak = 0.01f; // minimum peak to avoid division by zero
+        float peakDecay = 0.995f; // slowly decay peak for auto-normalization
+
+        while (lipsyncEnabled)
+        {
+            // Check if AudioSource is currently playing
+            if (audioSource != null && audioSource.isPlaying)
+            {
+                // Get current output data from AudioSource
+                audioSource.GetOutputData(outputSamples, 0);
+
+                // Calculate average amplitude from samples
+                float sum = 0f;
+                for (int i = 0; i < outputSamples.Length; i++)
+                {
+                    sum += Mathf.Abs(outputSamples[i]);
+                }
+                float avgAmplitude = sum / outputSamples.Length;
+
+                // Update peak with decay (adaptive normalization)
+                peak = Mathf.Max(peak * peakDecay, avgAmplitude);
+                if (peak < 0.01f) peak = 0.01f;
+
+                // Add to smoothing history
+                amplitudeHistory.Enqueue(avgAmplitude);
+                if (amplitudeHistory.Count > smoothingWindow)
+                    amplitudeHistory.Dequeue();
+
+                // Calculate smoothed amplitude
+                float smoothed = 0f;
+                foreach (var a in amplitudeHistory)
+                    smoothed += a;
+                smoothed /= amplitudeHistory.Count;
+
+                // Normalize
+                currentNormalizedAmplitude = Mathf.Clamp01(smoothed / peak);
+            }
+            else
+            {
+                // AudioSource not playing, gradually close mouth
+                currentNormalizedAmplitude = Mathf.Lerp(currentNormalizedAmplitude, 0f, Time.deltaTime * amplitudeLerpSpeed);
+                amplitudeHistory.Clear();
+            }
+
+            yield return new WaitForSeconds(updateInterval);
+        }
+
+        // Clean up when disabled
         currentNormalizedAmplitude = 0f;
         lipsyncRoutine = null;
     }
