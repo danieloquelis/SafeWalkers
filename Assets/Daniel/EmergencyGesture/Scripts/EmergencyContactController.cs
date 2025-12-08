@@ -40,12 +40,25 @@ public class EmergencyContactController : MonoBehaviour
 	[Tooltip("Maximum time in seconds to wait for SMS sends to complete before triggering OnContactNotReached.")]
 	[SerializeField] private float responseTimeoutSeconds = 10f;
 
+	[Tooltip("Fallback timeout in seconds after OnContacted fires. If no activity, OnContactNotReached is triggered as fallback.")]
+	[SerializeField] private float fallbackTimeoutSeconds = 20f;
+
+	[Tooltip("Enable fallback timeout (OnContactNotReached fires after OnContacted if no activity).")]
+	[SerializeField] private bool enableFallbackTimeout = true;
+
 	private readonly List<string> _activeContacts = new List<string>();
 	private bool _hasStarted;
+	private Coroutine _fallbackCoroutine;
 
 	private void Awake()
 	{
 		LoadContacts();
+	}
+
+	private void OnDestroy()
+	{
+		// Clean up any active fallback timeout
+		CancelFallbackTimeout();
 	}
 
 	/// <summary>
@@ -160,11 +173,22 @@ public class EmergencyContactController : MonoBehaviour
 			}
 		}
 
-		// Trigger appropriate events
+		// Trigger appropriate events (use separate frame to avoid blocking audio)
 		if (anySuccess)
 		{
 			Debug.Log($"[EmergencyContactController] At least one contact was successfully notified ({completedContacts.Count}/{pendingContacts.Count} responded).");
+
+			// Wait one frame before invoking to prevent main thread blocking
+			yield return null;
+
 			OnContacted?.Invoke();
+
+			// Start fallback timeout if enabled
+			if (enableFallbackTimeout)
+			{
+				Debug.Log($"[EmergencyContactController] Starting fallback timeout ({fallbackTimeoutSeconds}s) after OnContacted.");
+				_fallbackCoroutine = StartCoroutine(FallbackTimeoutCoroutine());
+			}
 		}
 		else
 		{
@@ -176,6 +200,10 @@ public class EmergencyContactController : MonoBehaviour
 			{
 				Debug.LogWarning($"[EmergencyContactController] All SMS sends failed ({completedContacts.Count} contacts).");
 			}
+
+			// Wait one frame before invoking to prevent main thread blocking
+			yield return null;
+
 			OnContactNotReached?.Invoke();
 		}
 
@@ -190,11 +218,42 @@ public class EmergencyContactController : MonoBehaviour
 	}
 
 	/// <summary>
+	/// Fallback timeout coroutine that waits after OnContacted fires.
+	/// If no activity occurs, triggers OnContactNotReached as fallback.
+	/// </summary>
+	private IEnumerator FallbackTimeoutCoroutine()
+	{
+		Debug.Log($"[EmergencyContactController] Fallback timeout started - waiting {fallbackTimeoutSeconds} seconds...");
+		yield return new WaitForSeconds(fallbackTimeoutSeconds);
+
+		Debug.LogWarning($"[EmergencyContactController] Fallback timeout reached after {fallbackTimeoutSeconds}s - triggering OnContactNotReached.");
+		OnContactNotReached?.Invoke();
+
+		_fallbackCoroutine = null;
+	}
+
+	/// <summary>
+	/// Cancels the fallback timeout if it's running.
+	/// Call this if the user joins the call or responds, so OnContactNotReached doesn't fire.
+	/// </summary>
+	public void CancelFallbackTimeout()
+	{
+		if (_fallbackCoroutine != null)
+		{
+			Debug.Log("[EmergencyContactController] Fallback timeout cancelled.");
+			StopCoroutine(_fallbackCoroutine);
+			_fallbackCoroutine = null;
+		}
+	}
+
+	/// <summary>
 	/// Resets the idempotency flag so the emergency flow can be triggered again.
+	/// Also cancels any active fallback timeout.
 	/// </summary>
 	public void ResetEmergencyContact()
 	{
 		_hasStarted = false;
+		CancelFallbackTimeout();
 	}
 
 	/// <summary>

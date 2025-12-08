@@ -23515,8 +23515,12 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2001063498}
     - target: {fileID: 2388802344581257278, guid: 8daf7c973365b4b52ae2dff0fd35937e, type: 3}
+      propertyPath: fallbackTimeoutSeconds
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2388802344581257278, guid: 8daf7c973365b4b52ae2dff0fd35937e, type: 3}
       propertyPath: responseTimeoutSeconds
-      value: 20
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 2388802344581257278, guid: 8daf7c973365b4b52ae2dff0fd35937e, type: 3}
       propertyPath: defaultEmergencyContacts.Array.size
