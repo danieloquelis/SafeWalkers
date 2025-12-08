@@ -31,12 +31,39 @@ public class MainController : MonoBehaviour
     [Tooltip("Invoked when a detected hand pose matches the configured safe-mode gesture.")]
     [SerializeField] private UnityEvent onSafeModeEnabled;
 
+    [Header("Safe Mode Protection")]
+    [SerializeField, Tooltip("Maximum number of times safe mode can be activated")]
+    private int maxSafeModeActivations = 2;
+
     // Local cached state
     private bool _hasMainContact;
     private bool _hasEmergencyGesture;
     private bool _hasGestureSelection;
     private HandPose _savedHandPose;
     private bool _sceneReadyInvoked;
+
+    // Safe mode state
+    private bool _isSafeModeEnabled = false;
+    private int _safeModeActivationCount = 0;
+
+    /// <summary>
+    /// Gets whether safe mode is currently enabled.
+    /// </summary>
+    public bool SafeModeEnabled => _isSafeModeEnabled;
+
+    /// <summary>
+    /// Gets the number of times safe mode has been activated in this session.
+    /// </summary>
+    public int SafeModeActivationCount => _safeModeActivationCount;
+
+    /// <summary>
+    /// Checks if safe mode can be triggered (not already enabled and under max activations).
+    /// Other systems can check this before attempting to trigger safe mode.
+    /// </summary>
+    public bool CanTriggerSafeMode()
+    {
+        return !_isSafeModeEnabled && _safeModeActivationCount < maxSafeModeActivations;
+    }
 
     private void Start()
     {
@@ -136,6 +163,7 @@ public class MainController : MonoBehaviour
     /// <summary>
     /// Called when a hand pose is detected. If it matches the configured gesture
     /// (loaded from GestureDropDownSelection), invokes onSafeModeEnabled.
+    /// Protected: Will not trigger if safe mode is already enabled or max activations reached.
     /// </summary>
     public void OnGestureDetected(HandPose pose)
     {
@@ -146,16 +174,46 @@ public class MainController : MonoBehaviour
 
         if (pose == _savedHandPose)
         {
-            onSafeModeEnabled?.Invoke();
+            TriggerSafeMode("hand gesture");
         }
     }
 
     /// <summary>
     /// Public helper to trigger the same safe-mode UnityEvent from other scripts or UI.
-    /// This simply invokes the OnSafeModeEnabled event.
+    /// Protected: Will not trigger if safe mode is already enabled or max activations reached.
     /// </summary>
     public void OnSafeModeEnabled()
     {
+        TriggerSafeMode("manual call");
+    }
+
+    /// <summary>
+    /// Internal method to trigger safe mode with protection logic.
+    /// Prevents activation if safe mode is already enabled or max activations reached.
+    /// </summary>
+    /// <param name="source">Description of what triggered the safe mode (for logging)</param>
+    private void TriggerSafeMode(string source)
+    {
+        // Check if safe mode is already enabled
+        if (_isSafeModeEnabled)
+        {
+            Debug.LogWarning($"[MainController] Safe mode trigger from '{source}' blocked: Safe mode is already enabled.");
+            return;
+        }
+
+        // Check if max activations reached
+        if (_safeModeActivationCount >= maxSafeModeActivations)
+        {
+            Debug.LogWarning($"[MainController] Safe mode trigger from '{source}' blocked: Maximum activations ({maxSafeModeActivations}) reached.");
+            return;
+        }
+
+        // Enable safe mode
+        _isSafeModeEnabled = true;
+        _safeModeActivationCount++;
+        Debug.Log($"[MainController] Safe mode enabled by '{source}' (activation {_safeModeActivationCount}/{maxSafeModeActivations})");
+
+        // Invoke the event
         onSafeModeEnabled?.Invoke();
     }
 
@@ -177,14 +235,32 @@ public class MainController : MonoBehaviour
     /// <summary>
     /// Public method to disable safe mode by reloading the current scene.
     /// PlayerPrefs are left untouched; only the scene is restarted.
+    /// Note: Scene reload will reset the activation counter. Use DisableSafeModeWithoutReload() to preserve counter.
     /// </summary>
     public void DisableSafeMode()
     {
+        Debug.Log($"[MainController] Disabling safe mode (reloading scene)...");
         var current = SceneManager.GetActiveScene();
         if (current.IsValid())
         {
             SceneManager.LoadScene(current.buildIndex);
         }
+    }
+
+    /// <summary>
+    /// Disables safe mode without reloading the scene.
+    /// The activation counter is preserved, allowing limited re-activation.
+    /// </summary>
+    public void DisableSafeModeWithoutReload()
+    {
+        if (!_isSafeModeEnabled)
+        {
+            Debug.LogWarning("[MainController] DisableSafeModeWithoutReload called but safe mode is not enabled.");
+            return;
+        }
+
+        _isSafeModeEnabled = false;
+        Debug.Log($"[MainController] Safe mode disabled (activation count: {_safeModeActivationCount}/{maxSafeModeActivations})");
     }
 
     [Serializable]

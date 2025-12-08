@@ -2264,6 +2264,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 108941005}
   m_CullTransparentMesh: 1
+--- !u!1 &114792008
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 114792009}
+  m_Layer: 0
+  m_Name: thumbs_down
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &114792009
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 114792008}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &122918832
 GameObject:
   m_ObjectHideFlags: 0
@@ -5289,7 +5320,7 @@ GameObject:
   - component: {fileID: 332607160}
   - component: {fileID: 332607161}
   m_Layer: 0
-  m_Name: Help1GestureRight
+  m_Name: PunchGestureRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5323,7 +5354,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_HandTrackingEvents: {fileID: 1661747361}
-  m_HandShapeOrPose: {fileID: 11400000, guid: b9b172fee905747828322522505d82d9, type: 2}
+  m_HandShapeOrPose: {fileID: 11400000, guid: 4ae6cdbe0431948dda3e1e6d73003937, type: 2}
   m_GesturePerformed:
     m_PersistentCalls:
       m_Calls:
@@ -6948,6 +6979,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
+  maxSafeModeActivations: 2
 --- !u!114 &473623329
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9621,7 +9653,7 @@ GameObject:
   - component: {fileID: 699095689}
   - component: {fileID: 699095690}
   m_Layer: 0
-  m_Name: Help1GestureLeft
+  m_Name: PunchGestureLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9655,7 +9687,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_HandTrackingEvents: {fileID: 1933486497}
-  m_HandShapeOrPose: {fileID: 11400000, guid: a2f3d9509d9524a3f9857889ce53d039, type: 2}
+  m_HandShapeOrPose: {fileID: 11400000, guid: aaab1723d48414c30b8811087ab47ef9, type: 2}
   m_GesturePerformed:
     m_PersistentCalls:
       m_Calls:
@@ -11023,7 +11055,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Help 1
+  m_text: Punch
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -11439,9 +11471,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   phoneSprite: {fileID: 21300000, guid: 45a36e06a6ccf40aeb58a4af087bb439, type: 3}
-  help1Sprite: {fileID: 21300000, guid: d09c06c89edd1431ab269c8751e4caee, type: 3}
-  help2Sprite: {fileID: 21300000, guid: 39dd575aa453e4c5c84dc0f2cfe65459, type: 3}
-  thumbsDownSprite: {fileID: 21300000, guid: 7ee03df8dc77643bd8092ea705615487, type: 3}
+  help1Sprite: {fileID: 21300000, guid: c04c7336a5c6c4c3e989501ee4e2ed43, type: 3}
+  help2Sprite: {fileID: 21300000, guid: 2b08e3a9f33c041c99cbf84c4799d7ec, type: 3}
+  thumbsDownSprite: {fileID: 21300000, guid: 2b08e3a9f33c041c99cbf84c4799d7ec, type: 3}
   iconImage: {fileID: 269686608}
   gestureSelectionPrefsKey: GestureDropDownSelection
 --- !u!1001 &844900497
@@ -11660,7 +11692,7 @@ GameObject:
   - component: {fileID: 887395674}
   - component: {fileID: 887395673}
   m_Layer: 0
-  m_Name: Help1GestureItem
+  m_Name: PunchGestureItem
   m_TagString: QDSUIToggleBorderlessButton
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -13870,7 +13902,7 @@ MonoBehaviour:
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 3
+          m_IntArgument: 2
           m_FloatArgument: 0
           m_StringArgument: Detected
           m_BoolArgument: 0
@@ -18238,15 +18270,15 @@ RectTransform:
   m_GameObject: {fileID: 1381142062}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
-  m_ConstrainProportionsScale: 1
+  m_LocalScale: {x: 1.1736009, y: 0.6770775, z: 0.6770775}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1638185408}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 12, y: -14}
-  m_SizeDelta: {x: 24, y: 36}
+  m_SizeDelta: {x: 24, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1381142064
 MonoBehaviour:
@@ -18288,7 +18320,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: d09c06c89edd1431ab269c8751e4caee, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c04c7336a5c6c4c3e989501ee4e2ed43, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -20078,7 +20110,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Help 2
+  m_text: Thumbs up
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -20536,15 +20568,15 @@ RectTransform:
   m_GameObject: {fileID: 1607379678}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
-  m_ConstrainProportionsScale: 1
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1085698544}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 12, y: -14}
-  m_SizeDelta: {x: 24, y: 40.5}
+  m_SizeDelta: {x: 24, y: 24}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1607379680
 MonoBehaviour:
@@ -20586,7 +20618,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 39dd575aa453e4c5c84dc0f2cfe65459, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 212873994f93e49ec83c454d08cd9b34, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -21177,72 +21209,6 @@ MonoBehaviour:
   installationRoutineCheckpoint:
     _installationRoutineId: 
     _installationVariants: []
---- !u!1 &1620093370
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1620093371}
-  - component: {fileID: 1620093372}
-  m_Layer: 0
-  m_Name: Help2GestureLeft
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1620093371
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1620093370}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1933486498}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1620093372
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1620093370}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_HandTrackingEvents: {fileID: 1933486497}
-  m_HandShapeOrPose: {fileID: 11400000, guid: f3721eaa991474af0bcd704305ca65e6, type: 2}
-  m_GesturePerformed:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 473623328}
-        m_TargetAssemblyTypeName: MainController, Assembly-CSharp
-        m_MethodName: OnGestureDetectedFromInt
-        m_Mode: 3
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 2
-          m_FloatArgument: 0
-          m_StringArgument: Detected
-          m_BoolArgument: 0
-        m_CallState: 2
-  m_GestureEnded:
-    m_PersistentCalls:
-      m_Calls: []
-  m_MinimumHoldTime: 0.1
-  m_GestureDetectionInterval: 0.02
 --- !u!1 &1623084962
 GameObject:
   m_ObjectHideFlags: 0
@@ -22057,7 +22023,6 @@ Transform:
   m_Children:
   - {fileID: 316368174}
   - {fileID: 332607160}
-  - {fileID: 1813950628}
   - {fileID: 1079257629}
   m_Father: {fileID: 1697710370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -22434,7 +22399,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 7ee03df8dc77643bd8092ea705615487, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 2b08e3a9f33c041c99cbf84c4799d7ec, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -23406,7 +23371,7 @@ MonoBehaviour:
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 3
+          m_IntArgument: 2
           m_FloatArgument: 0
           m_StringArgument: Detected
           m_BoolArgument: 0
@@ -23748,72 +23713,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11d3f468b90b942b085a1b05ca84b25a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &1813950627
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1813950628}
-  - component: {fileID: 1813950629}
-  m_Layer: 0
-  m_Name: Help2GestureRight
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1813950628
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1813950627}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.019287225, y: 0.05301949, z: 0.014803372}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1661747362}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1813950629
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1813950627}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8dc6fceab2d484f819e023d7721b6e21, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_HandTrackingEvents: {fileID: 1661747361}
-  m_HandShapeOrPose: {fileID: 11400000, guid: d4e75ee8b142f46d487727d097029eb5, type: 2}
-  m_GesturePerformed:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 473623328}
-        m_TargetAssemblyTypeName: MainController, Assembly-CSharp
-        m_MethodName: OnGestureDetectedFromInt
-        m_Mode: 3
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 2
-          m_FloatArgument: 0
-          m_StringArgument: Detected
-          m_BoolArgument: 0
-        m_CallState: 2
-  m_GestureEnded:
-    m_PersistentCalls:
-      m_Calls: []
-  m_MinimumHoldTime: 0.1
-  m_GestureDetectionInterval: 0.02
 --- !u!1 &1840526477
 GameObject:
   m_ObjectHideFlags: 0
@@ -25226,7 +25125,6 @@ Transform:
   m_Children:
   - {fileID: 803116469}
   - {fileID: 699095689}
-  - {fileID: 1620093371}
   - {fileID: 1790739661}
   m_Father: {fileID: 1697710370}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -27407,12 +27305,12 @@ GameObject:
   - component: {fileID: 2112890930}
   - component: {fileID: 2112890929}
   m_Layer: 0
-  m_Name: Help2GestureItem
+  m_Name: ThumbsUpGestureItem
   m_TagString: QDSUIToggleBorderlessButton
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2112890928
 RectTransform:
   m_ObjectHideFlags: 0
@@ -28991,3 +28889,4 @@ SceneRoots:
   - {fileID: 1991463}
   - {fileID: 1493941128}
   - {fileID: 1264291356}
+  - {fileID: 114792009}
