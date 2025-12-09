@@ -25,8 +25,15 @@ public class SafeWalkPairingController : MonoBehaviour
 
 	public string CurrentPairingId => _currentPairingId;
 	public string PlayerPrefsKey => playerPrefsKey;
+	public int ScanCount => _scanCount;
+	public int RequiredScans => RequiredScansConst;
+	public bool IsPairingComplete => _scanCount >= RequiredScansConst;
 
 	private string _currentPairingId;
+	private string _lastScannedPairingId;
+	private int _scanCount = 0;
+	private const int RequiredScansConst = 2;
+	private const int MaxScans = 2;
 
 	private void Awake()
 	{
@@ -61,7 +68,7 @@ public class SafeWalkPairingController : MonoBehaviour
 		}
 	}
 
-	public void HandleQrPayload(string payload)
+	public async void HandleQrPayload(string payload)
 	{
 		if (string.IsNullOrEmpty(payload))
 			return;
@@ -75,12 +82,39 @@ public class SafeWalkPairingController : MonoBehaviour
 				return;
 			}
 
-			SetPairingIdInternal(parsed.pairingId.Trim(), true);
-			_ = pusherService?.ConnectPairingChannelAsync(parsed.pairingId.Trim());
+			string sanitizedPairingId = parsed.pairingId.Trim();
+			Debug.Log($"[SafeWalkPairingController] ============ QR CODE DETECTED ============");
+			Debug.Log($"[SafeWalkPairingController] Pairing ID: {sanitizedPairingId}");
+
+			// Store the pairing ID immediately
+			SetPairingIdInternal(sanitizedPairingId, true);
+			Debug.Log($"[SafeWalkPairingController] Pairing ID saved to PlayerPrefs");
+
+			if (pusherService == null)
+			{
+				Debug.LogError("[SafeWalkPairingController] CRITICAL: Pusher service is NULL!");
+				return;
+			}
+
+			Debug.Log("[SafeWalkPairingController] Starting Pusher connection...");
+
+			// Connect to Pusher channel first (waits for subscription to complete)
+			await pusherService.ConnectPairingChannelAsync(sanitizedPairingId);
+			Debug.Log($"[SafeWalkPairingController] ✓ Connected to Pusher channel: {sanitizedPairingId}");
+
+			// Wait a moment to ensure mobile is ready
+			Debug.Log("[SafeWalkPairingController] Waiting 2 seconds for mobile app to be ready...");
+			await Task.Delay(2000);
+
+			// Send the pairing event
+			Debug.Log("[SafeWalkPairingController] Sending device_paired event to mobile...");
+			await pusherService.TriggerDevicePairedAsync(sanitizedPairingId);
+			Debug.Log("[SafeWalkPairingController] ✓✓✓ PAIRING COMPLETE - Event sent to mobile app ✓✓✓");
 		}
 		catch (Exception ex)
 		{
-			Debug.LogError($"[SafeWalkPairingController] Failed to parse QR payload: {ex}");
+			Debug.LogError($"[SafeWalkPairingController] ❌ ERROR during pairing: {ex.Message}");
+			Debug.LogError($"[SafeWalkPairingController] Stack trace: {ex.StackTrace}");
 		}
 	}
 
@@ -165,23 +199,41 @@ public class SafeWalkPairingController : MonoBehaviour
 		LoadPairingIdFromPrefs(connectToPusher: true);
 	}
 
+	/// <summary>
+	/// Resets the scan counter. Use this when you want to allow re-pairing.
+	/// </summary>
+	public void ResetScanCounter()
+	{
+		_scanCount = 0;
+		_lastScannedPairingId = null;
+		Debug.Log("[SafeWalkPairingController] Scan counter reset. Ready for new pairing.");
+	}
+
 	private void LoadPairingIdFromPrefs(bool connectToPusher)
 	{
+		Debug.Log("[SafeWalkPairingController] LoadPairingIdFromPrefs called");
+
 		if (string.IsNullOrEmpty(playerPrefsKey) || !PlayerPrefs.HasKey(playerPrefsKey))
 		{
+			Debug.Log("[SafeWalkPairingController] No pairing ID found in PlayerPrefs");
 			return;
 		}
 
 		string stored = PlayerPrefs.GetString(playerPrefsKey);
 		if (string.IsNullOrWhiteSpace(stored))
 		{
+			Debug.Log("[SafeWalkPairingController] Pairing ID in PlayerPrefs is empty");
 			return;
 		}
 
+		Debug.Log($"[SafeWalkPairingController] Found pairing ID in PlayerPrefs: {stored}");
 		SetPairingIdInternal(stored, false);
-		if (connectToPusher)
+
+		if (connectToPusher && pusherService != null)
 		{
-			_ = pusherService?.ConnectPairingChannelAsync(stored);
+			Debug.Log("[SafeWalkPairingController] Connecting to Pusher on startup (async, non-blocking)...");
+			// Don't await - let it connect in background
+			_ = pusherService.ConnectPairingChannelAsync(stored);
 		}
 	}
 }

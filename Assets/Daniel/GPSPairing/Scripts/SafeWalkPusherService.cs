@@ -41,6 +41,10 @@ public class SafeWalkPusherService : MonoBehaviour
 	private string _currentPairingId;
 	private string _currentChannel;
 	private string _socketId;
+	private bool _isSubscribed = false;
+	private TaskCompletionSource<bool> _subscriptionCompletionSource;
+	private TaskCompletionSource<bool> _connectionCompletionSource;
+	private bool _isConnecting = false;
 
 	private void Awake()
 	{
@@ -64,32 +68,97 @@ public class SafeWalkPusherService : MonoBehaviour
 
 	public async Task ConnectPairingChannelAsync(string pairingId)
 	{
-		if (!EnsureSettingsLoaded())
-			return;
+		Debug.Log($"[SafeWalkPusherService] >>> ConnectPairingChannelAsync called with pairing ID: {pairingId}");
 
-		if (string.IsNullOrWhiteSpace(pairingId))
+		// Check if another connection is in progress
+		if (_isConnecting)
 		{
-			Debug.LogWarning("[SafeWalkPusherService] Cannot connect without a pairing id.");
-			return;
+			Debug.LogWarning("[SafeWalkPusherService] Connection already in progress - cancelling previous attempt");
+			// Cancel any in-flight completion sources
+			_connectionCompletionSource?.TrySetCanceled();
+			_subscriptionCompletionSource?.TrySetCanceled();
+			_isConnecting = false;
 		}
 
-		string targetChannel = BuildPairingChannelName(pairingId);
+		_isConnecting = true;
 
-		if (_currentChannel == targetChannel &&
-			_webSocket != null &&
-			(_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.Connecting))
+		try
 		{
-			if (verboseLogging)
+			if (!EnsureSettingsLoaded())
 			{
-				Debug.Log("[SafeWalkPusherService] Already connected to pairing channel.");
+				Debug.LogError("[SafeWalkPusherService] Settings not loaded!");
+				throw new InvalidOperationException("Pusher settings not loaded");
 			}
-			return;
+
+			if (string.IsNullOrWhiteSpace(pairingId))
+			{
+				Debug.LogWarning("[SafeWalkPusherService] Cannot connect without a pairing id.");
+				throw new ArgumentException("Pairing ID cannot be empty", nameof(pairingId));
+			}
+
+			string targetChannel = BuildPairingChannelName(pairingId);
+			Debug.Log($"[SafeWalkPusherService] Target channel: {targetChannel}");
+			Debug.Log($"[SafeWalkPusherService] Current channel: {_currentChannel ?? "null"}");
+			Debug.Log($"[SafeWalkPusherService] WebSocket state: {_webSocket?.State.ToString() ?? "null"}");
+			Debug.Log($"[SafeWalkPusherService] Is subscribed: {_isSubscribed}");
+
+			// Check if already connected
+			if (_currentChannel == targetChannel &&
+				_webSocket != null &&
+				_webSocket.State == WebSocketState.Open &&
+				_isSubscribed)
+			{
+				Debug.Log("[SafeWalkPusherService] ✓ Already connected and subscribed - skipping reconnection");
+				return;
+			}
+
+			Debug.Log("[SafeWalkPusherService] Setting up new connection...");
+			_currentPairingId = pairingId;
+			_currentChannel = targetChannel;
+			_isSubscribed = false;
+
+			// Create NEW subscription completion source for this pairing attempt
+			_subscriptionCompletionSource = new TaskCompletionSource<bool>();
+
+			Debug.Log("[SafeWalkPusherService] Calling OpenSocketAsync...");
+			try
+			{
+				await OpenSocketAsync();
+				Debug.Log("[SafeWalkPusherService] OpenSocketAsync completed");
+			}
+			catch (Exception ex)
+			{
+				Debug.LogError($"[SafeWalkPusherService] ❌ OpenSocketAsync failed: {ex.Message}");
+				_subscriptionCompletionSource = null;
+				throw; // Re-throw to propagate to caller
+			}
+
+			// Wait for subscription to succeed (with 10 second timeout)
+			Debug.Log("[SafeWalkPusherService] Waiting for subscription to complete (10s timeout)...");
+			var timeoutTask = Task.Delay(10000);
+			var completedTask = await Task.WhenAny(_subscriptionCompletionSource.Task, timeoutTask);
+
+			if (completedTask == timeoutTask)
+			{
+				Debug.LogError("[SafeWalkPusherService] ❌ Subscription timeout after 10 seconds!");
+				Debug.LogError($"[SafeWalkPusherService] WebSocket state: {_webSocket?.State.ToString() ?? "null"}");
+				_subscriptionCompletionSource = null;
+				throw new TimeoutException("Subscription to Pusher channel timed out after 10 seconds");
+			}
+
+			bool success = await _subscriptionCompletionSource.Task;
+			_subscriptionCompletionSource = null; // Clear it so error handlers don't interfere
+
+			Debug.Log($"[SafeWalkPusherService] ✓ Subscription completed with result: {success}");
+			if (!success)
+			{
+				throw new InvalidOperationException("Pusher subscription failed");
+			}
 		}
-
-		_currentPairingId = pairingId;
-		_currentChannel = targetChannel;
-
-		await OpenSocketAsync();
+		finally
+		{
+			_isConnecting = false;
+		}
 	}
 
 	public async Task TriggerSafeModeEnabledAsync(string pairingId, string sessionId, string videoUrl)
@@ -128,24 +197,62 @@ public class SafeWalkPusherService : MonoBehaviour
 		await TriggerEventAsync(new[] { BuildPairingChannelName(pairingId) }, "safe_mode_disabled", payload);
 	}
 
+	public async Task TriggerDevicePairedAsync(string pairingId)
+	{
+		if (!EnsureSettingsLoaded())
+			return;
+
+		string channelName = BuildPairingChannelName(pairingId);
+		Debug.Log($"[SafeWalkPusherService] ========================================");
+		Debug.Log($"[SafeWalkPusherService] Sending device_paired event");
+		Debug.Log($"[SafeWalkPusherService] Channel: {channelName}");
+		Debug.Log($"[SafeWalkPusherService] Pairing ID: {pairingId}");
+
+		var payload = new
+		{
+			pairingId,
+			deviceType = "metaquest",
+			timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+		};
+
+		Debug.Log($"[SafeWalkPusherService] Payload: {JsonConvert.SerializeObject(payload)}");
+
+		await TriggerEventAsync(new[] { channelName }, "device_paired", payload);
+
+		Debug.Log($"[SafeWalkPusherService] ✓ Event sent successfully");
+		Debug.Log($"[SafeWalkPusherService] ========================================");
+	}
+
 	public static string BuildPairingChannelName(string pairingId) => $"safewalk-mobile-{pairingId}";
 	public static string BuildSessionChannelName(string sessionId) => $"safewalk-session-{sessionId}";
 
 	private async Task OpenSocketAsync()
 	{
+		Debug.Log("[SafeWalkPusherService] >>> OpenSocketAsync started");
+
+		// Close existing socket without completing TaskCompletionSources
 		CloseSocket();
+		Debug.Log("[SafeWalkPusherService] Closed existing socket");
 
 		if (!EnsureSettingsLoaded())
-			return;
+		{
+			Debug.LogError("[SafeWalkPusherService] Settings not loaded in OpenSocketAsync");
+			throw new InvalidOperationException("Pusher settings not loaded");
+		}
 
 		if (string.IsNullOrWhiteSpace(settings.apiKey) || string.IsNullOrWhiteSpace(settings.cluster))
 		{
-			Debug.LogError("[SafeWalkPusherService] Missing Pusher configuration.");
-			return;
+			Debug.LogError("[SafeWalkPusherService] Missing Pusher configuration (apiKey or cluster)");
+			throw new InvalidOperationException("Missing Pusher configuration");
 		}
 
 		string url =
 			$"wss://ws-{settings.cluster}.pusher.com/app/{settings.apiKey}?protocol=7&client=unity-native&version=1.0&support_transports=ws";
+
+		Debug.Log($"[SafeWalkPusherService] WebSocket URL: {url}");
+
+		// Create NEW connection completion source for this connection attempt
+		_connectionCompletionSource = new TaskCompletionSource<bool>();
 
 		_webSocket = new WebSocket(url);
 		_webSocket.OnOpen += HandleSocketOpen;
@@ -153,23 +260,44 @@ public class SafeWalkPusherService : MonoBehaviour
 		_webSocket.OnError += HandleSocketError;
 		_webSocket.OnMessage += HandleSocketMessage;
 
-		try
+		Debug.Log("[SafeWalkPusherService] WebSocket created, starting connection (non-blocking)...");
+
+		// Start connection but DON'T await it - this allows Unity's Update() loop to continue
+		_ = _webSocket.Connect();
+
+		// Wait for the OnOpen callback to fire via TaskCompletionSource
+		Debug.Log("[SafeWalkPusherService] Waiting for OnOpen callback (8s timeout)...");
+		var timeoutTask = Task.Delay(8000);
+		var completedTask = await Task.WhenAny(_connectionCompletionSource.Task, timeoutTask);
+
+		if (completedTask == timeoutTask)
 		{
-			await _webSocket.Connect();
-		}
-		catch (Exception ex)
-		{
-			Debug.LogError($"[SafeWalkPusherService] Failed to connect to Pusher: {ex}");
+			Debug.LogError("[SafeWalkPusherService] ❌ WebSocket OnOpen TIMEOUT after 8 seconds!");
+			Debug.LogError("[SafeWalkPusherService] Connection never opened. Check network/firewall.");
+			_connectionCompletionSource = null;
 			CloseSocket();
+			throw new TimeoutException("WebSocket connection attempt timed out");
 		}
+
+		bool success = await _connectionCompletionSource.Task;
+		_connectionCompletionSource = null; // Clear it so error handlers don't interfere
+
+		if (!success)
+		{
+			Debug.LogError("[SafeWalkPusherService] ❌ WebSocket connection failed");
+			CloseSocket();
+			throw new InvalidOperationException("WebSocket connection failed");
+		}
+
+		Debug.Log("[SafeWalkPusherService] ✓ WebSocket connection established");
 	}
 
 	private void HandleSocketOpen()
 	{
-		if (verboseLogging)
-		{
-			Debug.Log("[SafeWalkPusherService] WebSocket connection opened.");
-		}
+		Debug.Log("[SafeWalkPusherService] ✓✓✓ HandleSocketOpen called - WebSocket is OPEN ✓✓✓");
+
+		// Signal that connection is established
+		_connectionCompletionSource?.TrySetResult(true);
 
 		SubscribeToChannel();
 	}
@@ -177,11 +305,25 @@ public class SafeWalkPusherService : MonoBehaviour
 	private void HandleSocketClose(WebSocketCloseCode closeCode)
 	{
 		Debug.LogWarning($"[SafeWalkPusherService] WebSocket closed: {closeCode}");
+
+		// Only signal failure if we're actively connecting and completion sources exist
+		if (_isConnecting)
+		{
+			_connectionCompletionSource?.TrySetResult(false);
+			_subscriptionCompletionSource?.TrySetResult(false);
+		}
 	}
 
 	private void HandleSocketError(string message)
 	{
 		Debug.LogError($"[SafeWalkPusherService] WebSocket error: {message}");
+
+		// Only signal failure if we're actively connecting and completion sources exist
+		if (_isConnecting)
+		{
+			_connectionCompletionSource?.TrySetResult(false);
+			_subscriptionCompletionSource?.TrySetResult(false);
+		}
 	}
 
 	private void HandleSocketMessage(byte[] bytes)
@@ -205,9 +347,16 @@ public class SafeWalkPusherService : MonoBehaviour
 				SendSocketPayload(new PusherClientMessage { @event = "pusher:pong" });
 				break;
 			case "pusher_internal:subscription_succeeded":
-				if (verboseLogging)
+				Debug.Log("[SafeWalkPusherService] ✓✓✓ SUBSCRIPTION SUCCEEDED ✓✓✓");
+				_isSubscribed = true;
+				if (_subscriptionCompletionSource != null)
 				{
-					Debug.Log("[SafeWalkPusherService] Subscription succeeded.");
+					Debug.Log("[SafeWalkPusherService] Setting completion source result to true");
+					_subscriptionCompletionSource.TrySetResult(true);
+				}
+				else
+				{
+					Debug.LogWarning("[SafeWalkPusherService] Subscription completion source is NULL!");
 				}
 				break;
 			case "mobile_location_update":
@@ -224,15 +373,17 @@ public class SafeWalkPusherService : MonoBehaviour
 
 	private void HandleConnectionEstablished(string data)
 	{
+		Debug.Log("[SafeWalkPusherService] >>> HandleConnectionEstablished called");
+
 		if (string.IsNullOrEmpty(data))
+		{
+			Debug.LogWarning("[SafeWalkPusherService] Connection established but data is empty");
 			return;
+		}
 
 		var established = JsonConvert.DeserializeObject<ConnectionEstablishedPayload>(data);
 		_socketId = established?.socket_id;
-		if (verboseLogging)
-		{
-			Debug.Log($"[SafeWalkPusherService] Connection established. socket_id={_socketId}");
-		}
+		Debug.Log($"[SafeWalkPusherService] ✓ Connection established. socket_id={_socketId}");
 
 		SubscribeToChannel();
 	}
@@ -258,8 +409,15 @@ public class SafeWalkPusherService : MonoBehaviour
 
 	private void SubscribeToChannel()
 	{
+		Debug.Log("[SafeWalkPusherService] >>> SubscribeToChannel called");
+		Debug.Log($"[SafeWalkPusherService] WebSocket: {(_webSocket != null ? "exists" : "NULL")}");
+		Debug.Log($"[SafeWalkPusherService] Current channel: {_currentChannel ?? "NULL"}");
+
 		if (_webSocket == null || string.IsNullOrEmpty(_currentChannel))
+		{
+			Debug.LogWarning("[SafeWalkPusherService] Cannot subscribe - WebSocket or channel is null");
 			return;
+		}
 
 		var subscribePayload = new PusherClientMessage
 		{
@@ -267,7 +425,9 @@ public class SafeWalkPusherService : MonoBehaviour
 			data = new SubscriptionData { channel = _currentChannel }
 		};
 
+		Debug.Log($"[SafeWalkPusherService] Sending subscribe message for channel: {_currentChannel}");
 		SendSocketPayload(subscribePayload);
+		Debug.Log("[SafeWalkPusherService] Subscribe message sent");
 	}
 
 	private void SendSocketPayload(PusherClientMessage message)
@@ -297,6 +457,8 @@ public class SafeWalkPusherService : MonoBehaviour
 		}
 
 		_socketId = null;
+		_isSubscribed = false;
+		// Don't complete TaskCompletionSources here - they're managed by the connection/subscription flow
 	}
 
 	private async Task TriggerEventAsync(IEnumerable<string> channels, string eventName, object payload)

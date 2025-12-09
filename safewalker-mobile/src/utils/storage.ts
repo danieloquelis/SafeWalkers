@@ -37,3 +37,23 @@ export async function setSessionId(sessionId: string | null): Promise<void> {
     console.error("Failed to set session ID", e);
   }
 }
+
+const LAST_EVENT_CHECK_KEY = "safewalk_last_event_check";
+
+export async function getLastEventCheckTime(): Promise<number> {
+  try {
+    const time = await AsyncStorage.getItem(LAST_EVENT_CHECK_KEY);
+    return time ? parseInt(time, 10) : 0;
+  } catch (e) {
+    console.error("Failed to get last event check time", e);
+    return 0;
+  }
+}
+
+export async function setLastEventCheckTime(timestamp: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LAST_EVENT_CHECK_KEY, timestamp.toString());
+  } catch (e) {
+    console.error("Failed to set last event check time", e);
+  }
+}

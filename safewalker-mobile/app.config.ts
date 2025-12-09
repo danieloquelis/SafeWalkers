@@ -32,6 +32,9 @@ const config: ExpoConfig = {
       "INTERNET",
       "FOREGROUND_SERVICE",
       "FOREGROUND_SERVICE_LOCATION",
+      "WAKE_LOCK",
+      "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+      "ACCESS_NETWORK_STATE",
     ],
   },
   plugins: [
