@@ -12,7 +12,7 @@ public class SafeRouteFinderManager : MonoBehaviour
 
     [Header("Routing Config")]
     [SerializeField] private SafetyProfile safetyProfile = SafetyProfile.CrowdedIndoor;
-    [SerializeField] private bool snapPlayerToRoute = true;
+    [SerializeField] private bool snapPlayerToRoute = false;
 
     private bool _calculationInProgress;
     private bool _routeStarted;

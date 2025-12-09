@@ -34,6 +34,8 @@ public class ORS_Routing : MonoBehaviour
     [SerializeField] private Color lineTint = Color.white;
     [Tooltip("Vertical offset (meters) applied to every route point. Use negative values to place the path near the floor.")]
     [SerializeField, Range(-2f, 0.5f)] private float routeHeightOffset = 0.02f;
+    [SerializeField] private bool useRaycastForFloorDetection = true;
+    [SerializeField] private LayerMask floorLayerMask = ~0;
 
     [Header("Visibility")]
     [SerializeField] private bool revealRouteFromPlayer = true;
@@ -158,9 +160,18 @@ public class ORS_Routing : MonoBehaviour
         if (snapPlayer && cachedRoute.Count > 0)
         {
             if (xrRig != null)
-                xrRig.position = cachedRoute[0];
+            {
+                // Only snap XZ position, preserve Y to avoid disrupting avatar positioning
+                Vector3 snapTarget = cachedRoute[0];
+                snapTarget.y = xrRig.position.y;
+                xrRig.position = snapTarget;
+            }
             else if (Camera.main != null)
-                Camera.main.transform.position = cachedRoute[0];
+            {
+                Vector3 snapTarget = cachedRoute[0];
+                snapTarget.y = Camera.main.transform.position.y;
+                Camera.main.transform.position = snapTarget;
+            }
         }
     }
 
@@ -219,7 +230,20 @@ public class ORS_Routing : MonoBehaviour
 
         float x = (lonRad - lon0) * Mathf.Cos(lat0) * EarthRadius;
         float z = (latRad - lat0) * EarthRadius;
-        return new Vector3(x, routeHeightOffset, z);
+
+        float yHeight = routeHeightOffset;
+
+        // Optionally raycast down to find actual floor
+        if (useRaycastForFloorDetection)
+        {
+            Vector3 testPos = new Vector3(x, 10f, z); // Start raycast from above
+            if (Physics.Raycast(testPos, Vector3.down, out RaycastHit hit, 20f, floorLayerMask))
+            {
+                yHeight = hit.point.y + routeHeightOffset;
+            }
+        }
+
+        return new Vector3(x, yHeight, z);
     }
 
     void DrawRoute()
