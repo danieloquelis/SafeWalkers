@@ -19015,7 +19015,7 @@ MonoBehaviour:
   endLatLon: {x: 52.44978, y: 13.334143}
   offRouteThreshold: 10
   autoRequestOnStart: 0
-  snapPlayerOnAutoRoute: 1
+  snapPlayerOnAutoRoute: 0
   lineRenderer: {fileID: 1378294538}
   xrRig: {fileID: 1661167393}
   flowLineMaterial: {fileID: 2100000, guid: 5434f3e60d0fb41c387164ab47e52c8b, type: 2}
@@ -19025,6 +19025,10 @@ MonoBehaviour:
   lineAlpha: 0.65
   lineTint: {r: 0.48235294, g: 0.8980392, b: 0.76862746, a: 1}
   routeHeightOffset: -2
+  useRaycastForFloorDetection: 1
+  floorLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
   revealRouteFromPlayer: 1
   maxVisibleDistance: 35
 --- !u!120 &1378294538
