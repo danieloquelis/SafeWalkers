@@ -3442,7 +3442,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 246149027}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 879.99976}
+  m_LocalPosition: {x: 0, y: 0, z: 609}
   m_LocalScale: {x: 1.2, y: 1.2, z: 1.2}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -6254,7 +6254,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
@@ -7003,6 +7003,7 @@ MonoBehaviour:
           m_BoolArgument: 1
         m_CallState: 2
   pairingController: {fileID: 1463169605}
+  autoFindPairingController: 1
   mainEmergencyContactKey: MainEmergencyContactNumber
   emergencyGestureKey: EmergencyGesture
   pairingIdPrefsKey: SafeWalk.PairingId

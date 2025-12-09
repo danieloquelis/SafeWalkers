@@ -52,6 +52,11 @@ export default function SafeWalkScreen() {
     const loadStoredData = async () => {
       const storedPairingId = await getPairingId();
       const storedSessionId = await getSessionId();
+      console.log("========================================");
+      console.log("Mobile App Starting");
+      console.log(`Pairing ID: ${storedPairingId}`);
+      console.log(`Session ID: ${storedSessionId || "None"}`);
+      console.log("========================================");
       setPairingId(storedPairingId);
       setSessionIdState(storedSessionId);
     };
@@ -167,8 +172,13 @@ export default function SafeWalkScreen() {
           }) => {
             if (event.channelName !== channelName) return;
 
+            console.log(`[Pusher] Received event: ${event.eventName} on channel: ${event.channelName}`);
+            console.log(`[Pusher] Event data: ${event.data}`);
+
             if (event.eventName === "device_paired") {
-              console.log("MetaQuest device paired!");
+              console.log("========================================");
+              console.log("✓✓✓ DEVICE_PAIRED EVENT RECEIVED ✓✓✓");
+              console.log("========================================");
               setQuestPaired(true);
               setSafeModeState("ready");
               setError(null);
@@ -228,7 +238,11 @@ export default function SafeWalkScreen() {
           },
           onSubscriptionSucceeded: (subscribedChannel: string) => {
             if (subscribedChannel === channelName) {
-              console.log("Pusher subscription succeeded - now ready to receive events");
+              console.log("========================================");
+              console.log("✓ PUSHER SUBSCRIPTION SUCCEEDED");
+              console.log(`✓ Channel: ${channelName}`);
+              console.log("✓ Ready to receive events");
+              console.log("========================================");
               setConnecting(false);
               setFullyReady(true); // NOW we're ready to show QR and receive events
               // Keep in "idle" state until MetaQuest scans the QR code
