@@ -41,6 +41,8 @@ public class SafeWalkPusherService : MonoBehaviour
 	private string _currentPairingId;
 	private string _currentChannel;
 	private string _socketId;
+	private bool _isSubscribed = false;
+	private TaskCompletionSource<bool> _subscriptionCompletionSource;
 
 	private void Awake()
 	{
@@ -77,19 +79,35 @@ public class SafeWalkPusherService : MonoBehaviour
 
 		if (_currentChannel == targetChannel &&
 			_webSocket != null &&
-			(_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.Connecting))
+			(_webSocket.State == WebSocketState.Open || _webSocket.State == WebSocketState.Connecting) &&
+			_isSubscribed)
 		{
 			if (verboseLogging)
 			{
-				Debug.Log("[SafeWalkPusherService] Already connected to pairing channel.");
+				Debug.Log("[SafeWalkPusherService] Already connected and subscribed to pairing channel.");
 			}
 			return;
 		}
 
 		_currentPairingId = pairingId;
 		_currentChannel = targetChannel;
+		_isSubscribed = false;
+		_subscriptionCompletionSource = new TaskCompletionSource<bool>();
 
 		await OpenSocketAsync();
+
+		// Wait for subscription to succeed (with 5 second timeout)
+		var timeoutTask = Task.Delay(5000);
+		var completedTask = await Task.WhenAny(_subscriptionCompletionSource.Task, timeoutTask);
+
+		if (completedTask == timeoutTask)
+		{
+			Debug.LogWarning("[SafeWalkPusherService] Subscription timeout - continuing anyway");
+		}
+		else
+		{
+			Debug.Log("[SafeWalkPusherService] Subscription completed successfully");
+		}
 	}
 
 	public async Task TriggerSafeModeEnabledAsync(string pairingId, string sessionId, string videoUrl)
@@ -126,6 +144,21 @@ public class SafeWalkPusherService : MonoBehaviour
 		};
 
 		await TriggerEventAsync(new[] { BuildPairingChannelName(pairingId) }, "safe_mode_disabled", payload);
+	}
+
+	public async Task TriggerDevicePairedAsync(string pairingId)
+	{
+		if (!EnsureSettingsLoaded())
+			return;
+
+		var payload = new
+		{
+			pairingId,
+			deviceType = "metaquest",
+			timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+		};
+
+		await TriggerEventAsync(new[] { BuildPairingChannelName(pairingId) }, "device_paired", payload);
 	}
 
 	public static string BuildPairingChannelName(string pairingId) => $"safewalk-mobile-{pairingId}";
@@ -209,6 +242,8 @@ public class SafeWalkPusherService : MonoBehaviour
 				{
 					Debug.Log("[SafeWalkPusherService] Subscription succeeded.");
 				}
+				_isSubscribed = true;
+				_subscriptionCompletionSource?.TrySetResult(true);
 				break;
 			case "mobile_location_update":
 				HandleLocationUpdate(envelope.Data);
@@ -297,6 +332,8 @@ public class SafeWalkPusherService : MonoBehaviour
 		}
 
 		_socketId = null;
+		_isSubscribed = false;
+		_subscriptionCompletionSource?.TrySetResult(false);
 	}
 
 	private async Task TriggerEventAsync(IEnumerable<string> channels, string eventName, object payload)

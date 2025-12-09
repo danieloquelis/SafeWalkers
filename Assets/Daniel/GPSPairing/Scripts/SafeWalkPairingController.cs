@@ -61,7 +61,7 @@ public class SafeWalkPairingController : MonoBehaviour
 		}
 	}
 
-	public void HandleQrPayload(string payload)
+	public async void HandleQrPayload(string payload)
 	{
 		if (string.IsNullOrEmpty(payload))
 			return;
@@ -75,12 +75,28 @@ public class SafeWalkPairingController : MonoBehaviour
 				return;
 			}
 
-			SetPairingIdInternal(parsed.pairingId.Trim(), true);
-			_ = pusherService?.ConnectPairingChannelAsync(parsed.pairingId.Trim());
+			string sanitizedPairingId = parsed.pairingId.Trim();
+			SetPairingIdInternal(sanitizedPairingId, true);
+
+			if (pusherService != null)
+			{
+				// Connect to Pusher channel first (waits for subscription to complete)
+				await pusherService.ConnectPairingChannelAsync(sanitizedPairingId);
+				Debug.Log($"[SafeWalkPairingController] Connected to Pusher channel for pairing: {sanitizedPairingId}");
+
+				// Mobile app only shows QR code when it's fully subscribed and ready
+				// So we can send the event immediately - it will be received
+				await pusherService.TriggerDevicePairedAsync(sanitizedPairingId);
+				Debug.Log("[SafeWalkPairingController] Sent device_paired notification to mobile app");
+			}
+			else
+			{
+				Debug.LogWarning("[SafeWalkPairingController] Pusher service not available");
+			}
 		}
 		catch (Exception ex)
 		{
-			Debug.LogError($"[SafeWalkPairingController] Failed to parse QR payload: {ex}");
+			Debug.LogError($"[SafeWalkPairingController] Failed to handle QR payload: {ex}");
 		}
 	}
 

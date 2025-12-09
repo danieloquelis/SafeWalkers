@@ -20,6 +20,13 @@ public class MainController : MonoBehaviour
     [Tooltip("Invoked once when the scene is considered ready: main contact and emergency gesture are configured in PlayerPrefs.")]
     public UnityEvent OnSceneReady;
 
+    [Header("GPS Pairing")]
+    [SerializeField] private SafeWalkPairingController pairingController;
+
+    [Header("Auto-Setup Pairing")]
+    [Tooltip("If enabled and no pairing controller is assigned, will search for one in the scene")]
+    [SerializeField] private bool autoFindPairingController = true;
+
     [Header("Player Pref Keys")]
     [SerializeField] private string mainEmergencyContactKey = "MainEmergencyContactNumber";
     [SerializeField] private string emergencyGestureKey = "EmergencyGesture";
@@ -67,7 +74,24 @@ public class MainController : MonoBehaviour
 
     private void Start()
     {
+        EnsurePairingController();
         OnRefresh();
+    }
+
+    private void EnsurePairingController()
+    {
+        if (pairingController == null && autoFindPairingController)
+        {
+            pairingController = FindObjectOfType<SafeWalkPairingController>();
+            if (pairingController != null)
+            {
+                Debug.Log("[MainController] Auto-found SafeWalkPairingController in scene");
+            }
+            else
+            {
+                Debug.LogWarning("[MainController] SafeWalkPairingController not found in scene. GPS pairing will not work. Please add SafeWalkPairingController and SafeWalkPusherService components to a GameObject in MainScene.");
+            }
+        }
     }
 
     /// <summary>
@@ -270,8 +294,8 @@ public class MainController : MonoBehaviour
     }
 
     /// <summary>
-    /// Persists the pairing id extracted from the QR payload so the pairing controller
-    /// can pick it up on the next Awake.
+    /// Persists the pairing id extracted from the QR payload and immediately
+    /// establishes the Pusher connection to notify the mobile app.
     /// </summary>
     /// <param name="payload">Raw JSON payload read from the QR code.</param>
     public void StorePairingPayload(string payload)
@@ -295,6 +319,23 @@ public class MainController : MonoBehaviour
             PlayerPrefs.SetString(pairingIdPrefsKey, sanitized);
             PlayerPrefs.Save();
             Debug.Log($"[MainController] Stored pairing id '{sanitized}' into PlayerPrefs key '{pairingIdPrefsKey}'.");
+
+            // Immediately trigger the pairing controller to connect to Pusher
+            if (pairingController == null && autoFindPairingController)
+            {
+                Debug.Log("[MainController] Pairing controller was null, attempting to find it...");
+                EnsurePairingController();
+            }
+
+            if (pairingController != null)
+            {
+                Debug.Log($"[MainController] Triggering pairing controller to connect for pairing ID: {sanitized}");
+                pairingController.HandleQrPayload(payload);
+            }
+            else
+            {
+                Debug.LogError("[MainController] CRITICAL: SafeWalkPairingController not found! Mobile app will NOT be notified of pairing. Please add SafeWalkPairingController and SafeWalkPusherService components to MainScene.");
+            }
         }
         catch (Exception ex)
         {
